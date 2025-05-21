@@ -5,7 +5,6 @@
   <title>🔍 Rechercher un câble (Autocomplétion)</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    /* Suggestions box */
     #suggestions {
       position: absolute;
       z-index: 1000;
@@ -23,7 +22,6 @@
 </head>
 <body class="p-4 bg-light">
 
-  <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
     <div class="container-fluid">
       <a class="navbar-brand" href="index.html">📊 Câbles Viewer</a>
@@ -32,10 +30,10 @@
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav">
-          <li class="nav-item"><a class="nav-link" href="index.html">🔍 Rechercher Câble</a></li>
+          <li class="nav-item"><a class="nav-link active" href="index.html">🔍 Rechercher Câble</a></li>
           <li class="nav-item"><a class="nav-link" href="appareil.html">📡 Rechercher Appareil</a></li>
           <li class="nav-item"><a class="nav-link" href="generate.html">🛠 Générer JSON</a></li>
-          <li class="nav-item"><a class="nav-link active" href="rd.html">🔎 R&D</a></li>
+          <li class="nav-item"><a class="nav-link" href="rd.html">🔎 R&D</a></li>
         </ul>
       </div>
     </div>
@@ -49,9 +47,7 @@
       <button class="btn btn-primary" id="searchBtn">Rechercher</button>
     </div>
 
-    <!-- Zone pour suggestions -->
     <div id="suggestions" class="list-group"></div>
-
     <div id="result" class="mt-4"></div>
   </div>
 
@@ -61,55 +57,58 @@
     let dataMap = {};
     let allCbls = [];
 
+    const stripPrefix = id => String(id || "").replace(/^A36-C-/i, "");
+
     document.getElementById("searchBtn").addEventListener("click", searchCBL);
     document.getElementById("cblInput").addEventListener("input", showSuggestions);
     document.getElementById("cblInput").addEventListener("keydown", handleKeyDown);
 
-    // Charger les JSON
     async function loadAllData() {
       let temp = {};
       for (const col of colonnes) {
-        const res = await fetch(json/cables_${col}.json);
+        const res = await fetch(`json/cables_${col}.json`);
         const rows = await res.json();
         rows.forEach(row => {
-          const id = row.CBL;
+          const rawId = row.CBL;
+          const id = stripPrefix(rawId);
           if (!temp[id]) temp[id] = { CBL: id };
-          temp[id][col] = row[col];
+          if (typeof row[col] === "string") {
+            temp[id][col] = stripPrefix(row[col]);
+          } else {
+            temp[id][col] = row[col];
+          }
         });
       }
       dataMap = temp;
-      allCbls = Object.keys(temp); // Tous les identifiants CBL
+      allCbls = Object.keys(temp);
     }
 
     function searchCBL() {
-      const code = document.getElementById("cblInput").value.trim().toUpperCase();
+      const codeInput = document.getElementById("cblInput").value.trim().toUpperCase();
+      const code = stripPrefix(codeInput);
       if (!code) return;
       const cable = dataMap[code];
       const resultDiv = document.getElementById("result");
       hideSuggestions();
 
       if (!cable) {
-        resultDiv.innerHTML = <div class="alert alert-danger">Câble "${code}" non trouvé.</div>;
+        resultDiv.innerHTML = `<div class="alert alert-danger">Câble "${codeInput}" non trouvé.</div>`;
         return;
       }
 
-      // Affichage
-      let html = 
-        <div class="card mb-3">
-          <div class="card-header bg-primary text-white">🔌 Câble : ${cable.CBL}</div>
-          <div class="card-body">
-            <ul class="list-unstyled">
-      ;
+      let html = `<div class="card mb-3">
+        <div class="card-header bg-primary text-white">🔌 Câble : ${cable.CBL}</div>
+        <div class="card-body">
+          <ul class="list-unstyled">`;
       for (const key of colonnes) {
-        html += <li><strong>${key}:</strong> ${cable[key] || "-"}</li>;
+        html += `<li><strong>${key}:</strong> ${typeof cable[key] === "string" ? stripPrefix(cable[key]) : (cable[key] || "-")}</li>`;
       }
-      html += "</ul></div></div>";
+      html += `</ul></div></div>`;
       resultDiv.innerHTML = html;
     }
 
-    // Autocomplétion
     function showSuggestions() {
-      const input = document.getElementById("cblInput").value.trim().toUpperCase();
+      const input = stripPrefix(document.getElementById("cblInput").value.trim().toUpperCase());
       const sugDiv = document.getElementById("suggestions");
       sugDiv.innerHTML = "";
       if (!input) {
@@ -117,14 +116,12 @@
         return;
       }
 
-      // Filtrer
-      const matches = allCbls.filter(cbl => cbl.startsWith(input)).slice(0, 15);
+      const matches = allCbls.filter(cbl => cbl.includes(input)).slice(0, 15);
       if (matches.length === 0) {
         hideSuggestions();
         return;
       }
 
-      // Afficher la liste
       matches.forEach(cbl => {
         const item = document.createElement("div");
         item.className = "list-group-item list-group-item-action";
@@ -145,7 +142,6 @@
     }
 
     function handleKeyDown(e) {
-      // Si on appuie sur "Enter", on cherche direct
       if (e.key === "Enter") {
         e.preventDefault();
         searchCBL();
