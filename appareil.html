@@ -177,37 +177,41 @@
     }
 
     // Autocomplétion
-    function showSuggestions() {
-      const input = document.getElementById("apInput").value.trim().toUpperCase();
-      const sugDiv = document.getElementById("suggestions");
-      sugDiv.innerHTML = "";
-      if (!input) {
-        hideSuggestions();
-        return;
-      }
+function showSuggestions() {
+  const input = document.getElementById("cblInput").value.trim().toUpperCase();
+  const sugDiv = document.getElementById("suggestions");
+  sugDiv.innerHTML = "";
 
-      const matches = allApps
-        .filter(a => a.startsWith(input))
-        .slice(0, 15);
+  if (!input) {
+    hideSuggestions();
+    return;
+  }
 
-      if (matches.length === 0) {
-        hideSuggestions();
-        return;
-      }
+  // Filtrer avec .includes() pour autoriser la recherche sur la fin (partielle)
+  const matches = allCbls
+    .filter(cbl => cbl.includes(input)) // <- permet de taper "26AE" au lieu de tout le CBL
+    .slice(0, 15);
 
-      matches.forEach(app => {
-        const item = document.createElement("div");
-        item.className = "list-group-item list-group-item-action";
-        item.textContent = app;
-        item.addEventListener("click", () => {
-          document.getElementById("apInput").value = app;
-          hideSuggestions();
-          searchAppareil();
-        });
-        sugDiv.appendChild(item);
-      });
-      sugDiv.style.display = "block";
-    }
+  if (matches.length === 0) {
+    hideSuggestions();
+    return;
+  }
+
+  matches.forEach(cbl => {
+    const item = document.createElement("div");
+    item.className = "list-group-item list-group-item-action";
+    item.textContent = cbl;
+    item.addEventListener("click", () => {
+      document.getElementById("cblInput").value = cbl;
+      hideSuggestions();
+      searchCBL();
+    });
+    sugDiv.appendChild(item);
+  });
+
+  sugDiv.style.display = "block";
+}
+
 
     function hideSuggestions() {
       document.getElementById("suggestions").innerHTML = "";
