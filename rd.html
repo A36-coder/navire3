@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Recherche & Développement</title>
+  <!-- SheetJS pour Excel export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    /* Un peu de style pour la zone de chargement */
+    #fileInput {
+      max-width: 300px;
+    }
+    .appareil-table {
+      margin-bottom: 2rem;
+    }
+    /* Masqué par défaut */
+    #loadingMsg {
+      display: none;
+      font-style: italic;
+      color: #666;
+    }
+  </style>
+</head>
+<body class="p-4 bg-light">
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="index.html">📊 Câbles Viewer</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+          <li class="nav-item"><a class="nav-link" href="index.html">🔍 Rechercher Câble</a></li>
+          <li class="nav-item"><a class="nav-link" href="appareil.html">📡 Rechercher Appareil</a></li>
+          <li class="nav-item"><a class="nav-link" href="generate.html">🛠 Générer JSON</a></li>
+          <li class="nav-item"><a class="nav-link active" href="rd.html">🔎 R&D</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h1 class="mb-4">Recherche & Développement</h1>
+    <p>
+      Entrez ici plusieurs appareils (séparés par espace, point-virgule, virgule...).<br>
+      Ensuite, on recherche pour chacun la liste des câbles, leur GAM et leur statut.
+    </p>
+
+    <!-- Indicateur de base -->
+    <p id="baseIndicator" class="text-muted">Base : inconnue</p>
+
+    <!-- Message "Patientez…" masqué par défaut -->
+    <p id="loadingMsg">⏳ Patientez, chargement du fichier NEC en cours...</p>
+
+    <!-- 1) Chargement d'un nouveau fichier XLSB (optionnel) -->
+    <div class="mb-3">
+      <label for="fileInput" class="form-label">Charger un nouveau fichier NEC (.xlsb) :</label>
+      <input type="file" id="fileInput" accept=".xlsb" class="form-control">
+    </div>
+
+    <!-- 2) Champ multi-appareils -->
+    <div class="mb-3">
+      <label for="appareilsInput" class="form-label">
+        Appareils (ex: "VEDDH603C1 TR1234; STT701"):
+      </label>
+      <textarea id="appareilsInput" rows="2" class="form-control"></textarea>
+    </div>
+
+    <!-- 3) Boutons d'action -->
+    <button class="btn btn-primary mb-3" id="btnSearch">Rechercher</button>
+    <button class="btn btn-success mb-3 ms-2" id="btnExportAll">Exporter tout en Excel</button>
+    <button class="btn btn-warning mb-3 ms-2" id="btnExportNonTires">Exporter câbles non tirés</button>
+    <button class="btn btn-info mb-3 ms-2" id="btnExportOkAppareils">
+      Exporter appareils (tous câbles = T)
+    </button>
+
+    <!-- Zone d'affichage des tableaux -->
+    <div id="resultsArea"></div>
+  </div>
+
+  <script>
+    let cables = []; // { CBL, APA, APO, PT_CBL, RESP_TIRAGE, GAM, STT_CBL_BORD, LOCAL_APA, LOT_MTG_APA, LOCAL_APO, LOT_MTG_APO, ... }
+    let globalResults = [];
+
+    // Colonnes à extraire si on charge un XLSB :
+    // On ajoute "RESP_TIRAGE" pour récupérer la colonne depuis XLSB/JSON
+    const columnsOfInterest = [
+      "APA", "APO", 
+      "PT_CBL",
+      "RESP_TIRAGE",    // <-- on récupère le champ depuis cables_RESP_TIRAGE.json
+      "GAM", 
+      "STT_CBL_BORD",
+      "LOCAL_APA", 
+      "LOT_MTG_APA",
+      "LOCAL_APO", 
+      "LOT_MTG_APO"
+    ];
+    let currentBase = "inconnue";
+
+    window.addEventListener("load", init);
+
+    function init() {
+      document.getElementById("fileInput").addEventListener("change", handleFileXLSB);
+      document.getElementById("btnSearch").addEventListener("click", searchMultiAppareils);
+      document.getElementById("btnExportAll").addEventListener("click", () => exportToExcel(false));
+      document.getElementById("btnExportNonTires").addEventListener("click", () => exportToExcel(true));
+      document.getElementById("btnExportOkAppareils").addEventListener("click", exportOkAppareils);
+
+      loadFromJSON();
+    }
+
+    function updateBaseIndicator() {
+      document.getElementById("baseIndicator").textContent = `Base : ${currentBase}`;
+    }
+
+    // 1) Charger JSON par défaut
+    async function loadFromJSON() {
+      currentBase = "JSON par défaut";
+      updateBaseIndicator();
+
+      let merged = {};
+      for (const col of columnsOfInterest) {
+        try {
+          const url = `json/cables_${col}.json`;  // ex: cables_RESP_TIRAGE.json
+          const resp = await fetch(url);
+          if (!resp.ok) continue;
+          const rows = await resp.json();
+          rows.forEach(r => {
+            const id = r.CBL;
+            if (!merged[id]) merged[id] = { CBL: id };
+            merged[id][col] = r[col];
+          });
+        } catch (err) {
+          console.warn("Impossible de charger JSON", col, err);
+        }
+      }
+      cables = Object.values(merged);
+    }
+
+    // 2) Charger un XLSB
+    function handleFileXLSB(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      // Afficher le message de chargement
+      document.getElementById("loadingMsg").style.display = "block";
+
+      const reader = new FileReader();
+      reader.onload = evt => {
+        const data = new Uint8Array(evt.target.result);
+        parseXLSB(data);
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function parseXLSB(arrayBuf) {
+      try {
+        const wb = XLSX.read(arrayBuf, { type: 'array' });
+        const sheetName = wb.SheetNames.find(n => n.toLowerCase().includes("cables"));
+        if (!sheetName) {
+          alert("Feuille 'Cables' non trouvée !");
+          return;
+        }
+        const sheet = wb.Sheets[sheetName];
+        const raw = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+        let merged = {};
+        raw.forEach(row => {
+          const cbl = row["CBL"] || "";
+          if (!merged[cbl]) merged[cbl] = { CBL: cbl };
+          columnsOfInterest.forEach(col => {
+            merged[cbl][col] = row[col] || "";
+          });
+        });
+        cables = Object.values(merged);
+
+        currentBase = "Fichier NEC chargé manuellement";
+        updateBaseIndicator();
+
+        alert(`Nouveau fichier NEC chargé : ${cables.length} câbles !`);
+      } catch (err) {
+        console.error(err);
+        alert("Erreur XLSB : " + err.message);
+      } finally {
+        // On masque le message de chargement, quoi qu'il arrive
+        document.getElementById("loadingMsg").style.display = "none";
+      }
+    }
+
+    // 3) Recherche multi-appareils
+    function searchMultiAppareils() {
+      const input = document.getElementById("appareilsInput").value.trim();
+      if (!input) return;
+
+      // Split par espace, virgule, point-virgule, etc.
+      const appareils = input.split(/[\s,;]+/)
+                            .filter(Boolean)
+                            .map(a => a.toUpperCase());
+
+      const resultsArea = document.getElementById("resultsArea");
+      resultsArea.innerHTML = "";
+
+      globalResults = [];
+
+      appareils.forEach(app => {
+        // Filtrage
+        const found = cables.filter(c => {
+          const apa = String(c.APA || "").toUpperCase();
+          const apo = String(c.APO || "").toUpperCase();
+          return (apa === app || apo === app);
+        });
+
+        // Table HTML
+        const tableHTML = buildTableForApp(app, found);
+        resultsArea.innerHTML += tableHTML;
+
+        // On stocke dans globalResults
+        found.forEach(c => {
+          let local = "";
+          let lot   = "";
+          const apa = String(c.APA || "").toUpperCase();
+          const apo = String(c.APO || "").toUpperCase();
+
+          if (apa === app) {
+            local = c.LOCAL_APA || "";
+            lot   = c.LOT_MTG_APA || "";
+          }
+          if (apo === app) {
+            local = c.LOCAL_APO || "";
+            lot   = c.LOT_MTG_APO || "";
+          }
+
+          // On ajoute le champ RespTirage pour l'export
+          globalResults.push({
+            Appareil: app,
+            Câble: c.CBL,
+            PT_CBL: c.PT_CBL || "",
+            GAM: c.GAM || "",
+            Statut: c.STT_CBL_BORD || "",
+            RespTirage: c.RESP_TIRAGE || "",  // <-- nouveau champ
+            Local: local,
+            Lot: lot
+          });
+        });
+      });
+    }
+
+    // petite fonction pour construire la table HTML
+    // si tu ne veux pas afficher RespTirage, supprime la colonne <th> et <td>
+    function buildTableForApp(app, list) {
+      if (!list.length) {
+        return `<h4>${app}</h4><div class="alert alert-warning">Aucun câble trouvé.</div>`;
+      }
+
+      // Trouver local et lot associés à cet appareil (sur 1er câble trouvé)
+      let first = list.find(c => {
+        const apa = String(c.APA || "").toUpperCase();
+        const apo = String(c.APO || "").toUpperCase();
+        return (apa === app || apo === app);
+      });
+
+      let local = "";
+      let lot = "";
+      if (first) {
+        const apa = String(first.APA || "").toUpperCase();
+        const apo = String(first.APO || "").toUpperCase();
+        if (apa === app) {
+          local = first.LOCAL_APA || "";
+          lot = first.LOT_MTG_APA || "";
+        } else if (apo === app) {
+          local = first.LOCAL_APO || "";
+          lot = first.LOT_MTG_APO || "";
+        }
+      }
+
+      // On ajoute une colonne "Resp. Tirage" si on souhaite l’afficher
+      let rows = list.map(c => `
+        <tr>
+          <td>${app}</td>
+          <td>${c.CBL}</td>
+          <td>${c.PT_CBL || "-"}</td>
+          <td>${c.RESP_TIRAGE || "-"}</td> <!-- affichage du responsable de tirage -->
+          <td>${c.GAM || "-"}</td>
+          <td>${c.STT_CBL_BORD || "-"}</td>
+        </tr>`).join("");
+
+      return `
+        <div class="appareil-table">
+          <h4>${app} – ${list.length} câble(s) 
+            <br><small class="text-muted">Lot : ${lot || "-"} / Local : ${local || "-"}</small>
+          </h4>
+          <div class="table-responsive">
+            <table class="table table-bordered">
+              <thead class="table-light">
+                <tr>
+                  <th>Appareil</th>
+                  <th>Câble</th>
+                  <th>PT_CBL</th>
+                  <th>Resp. Tirage</th>
+                  <th>GAM</th>
+                  <th>Statut</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>`;
+    }
+
+    // 4) Export en Excel
+    function exportToExcel(onlyNonTires) {
+      let dataToExport = globalResults;
+      if (onlyNonTires) {
+        dataToExport = dataToExport.filter(r => (r.Statut || "").toUpperCase() !== "T");
+      }
+      if (!dataToExport.length) {
+        alert("Aucune donnée à exporter.");
+        return;
+      }
+
+      // On inclut la colonne "RespTirage" dans l'export
+      const ws = XLSX.utils.json_to_sheet(dataToExport, {
+        header: [
+          "Appareil", 
+          "Câble", 
+          "PT_CBL", 
+          "GAM", 
+          "Statut", 
+          "RespTirage",  // <-- nouveau champ dans le header
+          "Local", 
+          "Lot"
+        ]
+      });
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Export");
+
+      const fileName = onlyNonTires ? "non_tires.xlsx" : "all.xlsx";
+      XLSX.writeFile(wb, fileName);
+    }
+
+    // 5) Export appareils dont TOUS les câbles = T, parmi ceux recherchés
+    function exportOkAppareils() {
+      let deviceMap = {};
+      globalResults.forEach(row => {
+        const dev = row.Appareil;
+        if (!deviceMap[dev]) {
+          deviceMap[dev] = {
+            device: dev,
+            localSet: new Set(),
+            lotSet: new Set(),
+            allT: true
+          };
+        }
+        if (row.Local) deviceMap[dev].localSet.add(row.Local);
+        if (row.Lot)   deviceMap[dev].lotSet.add(row.Lot);
+
+        if ((row.Statut || "").toUpperCase() !== "T") {
+          deviceMap[dev].allT = false;
+        }
+      });
+
+      let finalArr = Object.values(deviceMap)
+        .filter(d => d.allT)
+        .map(d => ({
+          Appareil: d.device,
+          Local: Array.from(d.localSet).join(", "),
+          Lot: Array.from(d.lotSet).join(", "),
+          SGDTEL_OK: "OK"
+        }));
+
+      if (!finalArr.length) {
+        alert("Aucun appareil (parmi ceux recherchés) n'a tous ses câbles au statut T.");
+        return;
+      }
+
+      const ws = XLSX.utils.json_to_sheet(finalArr, {
+        header: ["Appareil", "Local", "Lot", "SGDTEL_OK"]
+      });
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Appareils_OK");
+
+      XLSX.writeFile(wb, "appareils_allT.xlsx");
+    }
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

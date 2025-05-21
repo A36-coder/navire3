@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>🛠 Générer et mettre à jour JSON</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    /* Un petit style perso pour le message de chargement */
+    #loadingMsg {
+      font-style: italic;
+      color: #666;
+    }
+  </style>
+</head>
+<body class="p-4 bg-light">
+
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="index.html">📊 Câbles Viewer</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+          <li class="nav-item"><a class="nav-link" href="index.html">🔍 Rechercher Câble</a></li>
+          <li class="nav-item"><a class="nav-link" href="appareil.html">📡 Rechercher Appareil</a></li>
+          <li class="nav-item"><a class="nav-link" href="generate.html">🛠 Générer JSON</a></li>
+          <li class="nav-item"><a class="nav-link active" href="rd.html">🔎 R&D</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h1>🛠 Générer des fichiers JSON depuis un fichier NEC (.xlsb)</h1>
+    <p>
+      Cette page vous permet de créer un JSON par colonne d’intérêt
+      à partir de la feuille <code>Cables</code> de votre fichier <code>.xlsb</code>.<br>
+      <strong>Plus tard</strong>, elle servira à mettre à jour le site en se connectant à
+      <a href="https://github.com/pvarc/elec/tree/main/json" target="_blank">pvarc/elec/json</a>.
+    </p>
+
+    <!-- Bouton pour télécharger le fichier NEC si besoin -->
+    <a href="https://share.chantiers-atlantique.com/share/proxy/alfresco/slingshot/node/content/workspace/SpacesStore/08213d03-1f34-4cb6-b1c8-ac94778059b8/Extraction_NEC_N34.xlsb?a=true"
+       class="btn btn-outline-secondary mb-3"
+       target="_blank"
+       download>
+      📥 Télécharger le fichier NEC (.xlsb)
+    </a>
+
+    <!-- Input file pour charger localement -->
+    <input type="file" id="fileInput" accept=".xlsb" class="form-control mb-3">
+
+    <div id="message"></div>
+    <div id="loadingMsg"></div>
+    <div id="downloadLinks" class="mt-4"></div>
+  </div>
+
+  <script>
+    // Liste des colonnes d'intérêt (en plus de CBL)
+    const columnsOfInterest = [
+      "GAM",
+      "APO",
+      "STT_CBL_BORD",
+      "RESP_TIRAGE",
+      "LOT_MTG_APO",
+      "APA",
+      "LOT_MTG_APA",
+      "PT_CBL",
+      "COD_PLAN",
+      "LOCAL_APO",
+      "LOCAL_APA"
+    ];
+
+    document.getElementById("fileInput").addEventListener("change", handleFile);
+
+    function handleFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      showMsg("", "info");
+      document.getElementById("loadingMsg").textContent = "⏳ Patientez, chargement du fichier en cours...";
+
+      const reader = new FileReader();
+      reader.onload = evt => {
+        try {
+          const buffer = new Uint8Array(evt.target.result);
+          parseAndSplitColumns(buffer);
+        } catch (err) {
+          console.error(err);
+          showMsg("❌ Erreur lecture fichier local : " + err.message, "danger");
+        } finally {
+          document.getElementById("loadingMsg").textContent = "";
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function parseAndSplitColumns(arrayBuf) {
+      try {
+        const workbook = XLSX.read(arrayBuf, { type: "array" });
+        const sheetName = workbook.SheetNames.find(n => n.toLowerCase().includes("cables"));
+        if (!sheetName) {
+          showMsg("❌ Feuille 'Cables' non trouvée", "danger");
+          return;
+        }
+
+        const sheet = workbook.Sheets[sheetName];
+        const jsonRaw = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+        const linksContainer = document.getElementById("downloadLinks");
+        linksContainer.innerHTML = "";
+
+        columnsOfInterest.forEach(col => {
+          const minimalData = jsonRaw.map(row => ({
+            CBL: row["CBL"] || "",
+            [col]: row[col] || ""
+          }));
+
+          // Générer le blob JSON
+          const blob = new Blob(
+            [JSON.stringify(minimalData, null, 2)],
+            { type: "application/json" }
+          );
+          const url = URL.createObjectURL(blob);
+
+          const fileName = `cables_${col}.json`;
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = fileName;
+          link.className = "btn btn-primary me-2 mb-2";
+          link.textContent = `Télécharger ${fileName}`;
+
+          linksContainer.appendChild(link);
+        });
+
+        showMsg(
+          `✅ ${
+            jsonRaw.length
+          } lignes chargées. ${columnsOfInterest.length} fichiers générés.`,
+          "success"
+        );
+      } catch (err) {
+        console.error(err);
+        showMsg("❌ Erreur lors du parse XLSB : " + err.message, "danger");
+      }
+    }
+
+    // Simple util pour afficher un message
+    function showMsg(msg, type = "info") {
+      document.getElementById("message").innerHTML =
+        `<div class="alert alert-${type}">${msg}</div>`;
+    }
+  </script>
+
+  <!-- Script Bootstrap -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
