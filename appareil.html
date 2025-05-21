@@ -106,20 +106,31 @@
     }
 
     function searchAppareil() {
-      const ap = document.getElementById("apInput").value.trim().toUpperCase();
-      if (!ap) return;
-      hideSuggestions();
+  const userInput = document.getElementById("apInput").value.trim().toUpperCase();
+  if (!userInput) return;
+  hideSuggestions();
 
-      // Filtrer les câbles (c.APA ou c.APO == ap)
-      const found = cables.filter(c => {
-        const apa = String(c.APA || "").toUpperCase();
-        const apo = String(c.APO || "").toUpperCase();
-        return (apa === ap || apo === ap);
-      });
+  let ap = userInput;
 
-      renderResults(found, ap);
-    }
+  // Recherche initiale
+  let found = cables.filter(c => {
+    const apa = String(c.APA || "").toUpperCase();
+    const apo = String(c.APO || "").toUpperCase();
+    return (apa === ap || apo === ap);
+  });
 
+  // Si rien trouvé, on essaie en ajoutant le préfixe
+  if (found.length === 0 && !ap.startsWith("A36-C-")) {
+    ap = "A36-C-" + userInput;
+    found = cables.filter(c => {
+      const apa = String(c.APA || "").toUpperCase();
+      const apo = String(c.APO || "").toUpperCase();
+      return (apa === ap || apo === ap);
+    });
+  }
+
+  renderResults(found, ap);
+}
     function renderResults(found, ap) {
       const resultDiv = document.getElementById("result");
 
