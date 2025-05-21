@@ -79,7 +79,7 @@
       let merged = {};
       for (const col of colonnes) {
         try {
-          const resp = await fetch(`json/cables_${col}.json`);
+          const resp = await fetch(json/cables_${col}.json);
           const rows = await resp.json();
           rows.forEach(row => {
             const id = row.CBL;
@@ -87,7 +87,7 @@
             merged[id][col] = row[col];
           });
         } catch (err) {
-          console.warn(`Erreur chargement cables_${col}.json`, err);
+          console.warn(Erreur chargement cables_${col}.json, err);
         }
       }
 
@@ -106,42 +106,31 @@
     }
 
     function searchAppareil() {
-  const userInput = document.getElementById("apInput").value.trim().toUpperCase();
-  if (!userInput) return;
-  hideSuggestions();
+      const ap = document.getElementById("apInput").value.trim().toUpperCase();
+      if (!ap) return;
+      hideSuggestions();
 
-  let ap = userInput;
+      // Filtrer les câbles (c.APA ou c.APO == ap)
+      const found = cables.filter(c => {
+        const apa = String(c.APA || "").toUpperCase();
+        const apo = String(c.APO || "").toUpperCase();
+        return (apa === ap || apo === ap);
+      });
 
-  // Recherche initiale
-  let found = cables.filter(c => {
-    const apa = String(c.APA || "").toUpperCase();
-    const apo = String(c.APO || "").toUpperCase();
-    return (apa === ap || apo === ap);
-  });
+      renderResults(found, ap);
+    }
 
-  // Si rien trouvé, on essaie en ajoutant le préfixe
-  if (found.length === 0 && !ap.startsWith("A36-C-")) {
-    ap = "A36-C-" + userInput;
-    found = cables.filter(c => {
-      const apa = String(c.APA || "").toUpperCase();
-      const apo = String(c.APO || "").toUpperCase();
-      return (apa === ap || apo === ap);
-    });
-  }
-
-  renderResults(found, ap);
-}
     function renderResults(found, ap) {
       const resultDiv = document.getElementById("result");
 
       if (found.length === 0) {
-        resultDiv.innerHTML = `<div class="alert alert-warning">Aucun câble lié à l'appareil "${ap}".</div>`;
+        resultDiv.innerHTML = <div class="alert alert-warning">Aucun câble lié à l'appareil "${ap}".</div>;
         return;
       }
 
       // Construisons un tableau :
       // | Câble | STT_CBL_BORD (statut) | GAM | Direction (APA/APO) |
-      let html = `
+      let html = 
         <h4>${found.length} câble(s) pour "${ap}" :</h4>
         <div class="table-responsive mt-3">
           <table class="table table-bordered">
@@ -154,7 +143,7 @@
               </tr>
             </thead>
             <tbody>
-      `;
+      ;
       found.forEach(c => {
         const apa = String(c.APA || "").toUpperCase();
         const apo = String(c.APO || "").toUpperCase();
@@ -162,56 +151,52 @@
         if (apa === ap) direction = "Arrivée (APA)";
         else if (apo === ap) direction = "Départ (APO)";
 
-        html += `
+        html += 
           <tr>
             <td>${c.CBL}</td>
             <td>${c.STT_CBL_BORD || "-"}</td>
             <td>${c.GAM || "-"}</td>
             <td>${direction}</td>
           </tr>
-        `;
+        ;
       });
-      html += `</tbody></table></div>`;
+      html += </tbody></table></div>;
 
       resultDiv.innerHTML = html;
     }
 
     // Autocomplétion
-function showSuggestions() {
-  const input = document.getElementById("cblInput").value.trim().toUpperCase();
-  const sugDiv = document.getElementById("suggestions");
-  sugDiv.innerHTML = "";
+    function showSuggestions() {
+      const input = document.getElementById("apInput").value.trim().toUpperCase();
+      const sugDiv = document.getElementById("suggestions");
+      sugDiv.innerHTML = "";
+      if (!input) {
+        hideSuggestions();
+        return;
+      }
 
-  if (!input) {
-    hideSuggestions();
-    return;
-  }
+      const matches = allApps
+        .filter(a => a.startsWith(input))
+        .slice(0, 15);
 
-  // Filtrer avec .includes() pour autoriser la recherche sur la fin (partielle)
-  const matches = allCbls
-    .filter(cbl => cbl.includes(input)) // <- permet de taper "26AE" au lieu de tout le CBL
-    .slice(0, 15);
+      if (matches.length === 0) {
+        hideSuggestions();
+        return;
+      }
 
-  if (matches.length === 0) {
-    hideSuggestions();
-    return;
-  }
-
-  matches.forEach(cbl => {
-    const item = document.createElement("div");
-    item.className = "list-group-item list-group-item-action";
-    item.textContent = cbl;
-    item.addEventListener("click", () => {
-      document.getElementById("cblInput").value = cbl;
-      hideSuggestions();
-      searchCBL();
-    });
-    sugDiv.appendChild(item);
-  });
-
-  sugDiv.style.display = "block";
-}
-
+      matches.forEach(app => {
+        const item = document.createElement("div");
+        item.className = "list-group-item list-group-item-action";
+        item.textContent = app;
+        item.addEventListener("click", () => {
+          document.getElementById("apInput").value = app;
+          hideSuggestions();
+          searchAppareil();
+        });
+        sugDiv.appendChild(item);
+      });
+      sugDiv.style.display = "block";
+    }
 
     function hideSuggestions() {
       document.getElementById("suggestions").innerHTML = "";
