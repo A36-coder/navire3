@@ -5,7 +5,6 @@
   <title>📡 Rechercher un appareil (Autocomplétion)</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    /* Suggestions box */
     #suggestions {
       position: absolute;
       z-index: 1000;
@@ -23,7 +22,6 @@
 </head>
 <body class="p-4 bg-light">
 
-  <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
     <div class="container-fluid">
       <a class="navbar-brand" href="index.html">📊 Câbles Viewer</a>
@@ -33,9 +31,9 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav">
           <li class="nav-item"><a class="nav-link" href="index.html">🔍 Rechercher Câble</a></li>
-          <li class="nav-item"><a class="nav-link" href="appareil.html">📡 Rechercher Appareil</a></li>
+          <li class="nav-item"><a class="nav-link active" href="appareil.html">📡 Rechercher Appareil</a></li>
           <li class="nav-item"><a class="nav-link" href="generate.html">🛠 Générer JSON</a></li>
-          <li class="nav-item"><a class="nav-link active" href="rd.html">🔎 R&D</a></li>
+          <li class="nav-item"><a class="nav-link" href="rd.html">🔎 R&D</a></li>
         </ul>
       </div>
     </div>
@@ -45,41 +43,31 @@
     <h1 class="mb-4">📡 Rechercher un appareil (autocomplétion)</h1>
 
     <div class="input-group mb-3">
-      <input type="text" id="apInput" class="form-control" placeholder="Ex: A36-MCC4022/01
-">
+      <input type="text" id="apInput" class="form-control" placeholder="Ex: MCC4022/01">
       <button class="btn btn-primary" id="searchBtn">Rechercher</button>
     </div>
 
-    <!-- Zone pour suggestions -->
     <div id="suggestions" class="list-group"></div>
-
     <div id="result" class="mt-4"></div>
   </div>
 
   <script>
-    // On a besoin de APA/APO, STT_CBL_BORD, GAM, ...
-    // (et éventuellement d'autres colonnes si on veut plus tard).
-    // Mais on se contentera d'extraire TOTOUT, en tout cas on fait :
-    const colonnes = [
-      "APO",
-      "APA",
-      "STT_CBL_BORD",
-      "GAM"
-    ];
+    const colonnes = ["APO", "APA", "STT_CBL_BORD", "GAM"];
 
     let cables = [];
-    let allApps = []; // Appareils distincts (APA + APO)
+    let allApps = [];
+
+    const stripPrefix = txt => String(txt || "").replace(/^A36-C-/i, "").toUpperCase();
 
     document.getElementById("searchBtn").addEventListener("click", searchAppareil);
     document.getElementById("apInput").addEventListener("input", showSuggestions);
     document.getElementById("apInput").addEventListener("keydown", handleKeyDown);
 
-    // Charger toutes les données depuis /json/
     async function loadAllData() {
       let merged = {};
       for (const col of colonnes) {
         try {
-          const resp = await fetch(json/cables_${col}.json);
+          const resp = await fetch(`json/cables_${col}.json`);
           const rows = await resp.json();
           rows.forEach(row => {
             const id = row.CBL;
@@ -87,51 +75,41 @@
             merged[id][col] = row[col];
           });
         } catch (err) {
-          console.warn(Erreur chargement cables_${col}.json, err);
+          console.warn(`Erreur chargement cables_${col}.json`, err);
         }
       }
 
-      // Convert merged object → array
-      cables = Object.values(merged);
+      cables = Object.values(merged).map(c => ({
+        ...c,
+        APA_SHORT: stripPrefix(c.APA),
+        APO_SHORT: stripPrefix(c.APO)
+      }));
 
-      // Construire la liste d'appareils
       const appsSet = new Set();
       cables.forEach(c => {
-        const apa = String(c.APA || "").toUpperCase();
-        const apo = String(c.APO || "").toUpperCase();
-        if (apa) appsSet.add(apa);
-        if (apo) appsSet.add(apo);
+        if (c.APA_SHORT) appsSet.add(c.APA_SHORT);
+        if (c.APO_SHORT) appsSet.add(c.APO_SHORT);
       });
       allApps = Array.from(appsSet);
     }
 
     function searchAppareil() {
-      const ap = document.getElementById("apInput").value.trim().toUpperCase();
+      const ap = stripPrefix(document.getElementById("apInput").value.trim().toUpperCase());
       if (!ap) return;
       hideSuggestions();
 
-      // Filtrer les câbles (c.APA ou c.APO == ap)
-      const found = cables.filter(c => {
-        const apa = String(c.APA || "").toUpperCase();
-        const apo = String(c.APO || "").toUpperCase();
-        return (apa === ap || apo === ap);
-      });
-
+      const found = cables.filter(c => c.APA_SHORT === ap || c.APO_SHORT === ap);
       renderResults(found, ap);
     }
 
     function renderResults(found, ap) {
       const resultDiv = document.getElementById("result");
-
       if (found.length === 0) {
-        resultDiv.innerHTML = <div class="alert alert-warning">Aucun câble lié à l'appareil "${ap}".</div>;
+        resultDiv.innerHTML = `<div class="alert alert-warning">Aucun câble lié à l'appareil "${ap}".</div>`;
         return;
       }
 
-      // Construisons un tableau :
-      // | Câble | STT_CBL_BORD (statut) | GAM | Direction (APA/APO) |
-      let html = 
-        <h4>${found.length} câble(s) pour "${ap}" :</h4>
+      let html = `<h4>${found.length} câble(s) pour "${ap}" :</h4>
         <div class="table-responsive mt-3">
           <table class="table table-bordered">
             <thead class="table-light">
@@ -142,32 +120,27 @@
                 <th>Direction</th>
               </tr>
             </thead>
-            <tbody>
-      ;
+            <tbody>`;
+
       found.forEach(c => {
-        const apa = String(c.APA || "").toUpperCase();
-        const apo = String(c.APO || "").toUpperCase();
         let direction = "-";
-        if (apa === ap) direction = "Arrivée (APA)";
-        else if (apo === ap) direction = "Départ (APO)";
+        if (c.APA_SHORT === ap) direction = "Arrivée (APA)";
+        else if (c.APO_SHORT === ap) direction = "Départ (APO)";
 
-        html += 
-          <tr>
-            <td>${c.CBL}</td>
-            <td>${c.STT_CBL_BORD || "-"}</td>
-            <td>${c.GAM || "-"}</td>
-            <td>${direction}</td>
-          </tr>
-        ;
+        html += `<tr>
+          <td>${c.CBL}</td>
+          <td>${c.STT_CBL_BORD || "-"}</td>
+          <td>${c.GAM || "-"}</td>
+          <td>${direction}</td>
+        </tr>`;
       });
-      html += </tbody></table></div>;
 
+      html += `</tbody></table></div>`;
       resultDiv.innerHTML = html;
     }
 
-    // Autocomplétion
     function showSuggestions() {
-      const input = document.getElementById("apInput").value.trim().toUpperCase();
+      const input = stripPrefix(document.getElementById("apInput").value.trim().toUpperCase());
       const sugDiv = document.getElementById("suggestions");
       sugDiv.innerHTML = "";
       if (!input) {
@@ -175,9 +148,7 @@
         return;
       }
 
-      const matches = allApps
-        .filter(a => a.startsWith(input))
-        .slice(0, 15);
+      const matches = allApps.filter(a => a.includes(input)).slice(0, 15);
 
       if (matches.length === 0) {
         hideSuggestions();
@@ -210,7 +181,6 @@
       }
     }
 
-    // Charger toutes les données au démarrage
     loadAllData();
   </script>
 
