@@ -13,11 +13,11 @@
 </head>
 <body class="p-4 bg-light">
 
-  <!-- Navbar -->
+  <!-- Navbar inchangée -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
     <div class="container-fluid">
       <a class="navbar-brand" href="index.html">📊 Câbles Viewer</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+      <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav">
           <li class="nav-item"><a class="nav-link" href="index.html">🔍 Rechercher Câble</a></li>
@@ -31,47 +31,52 @@
 
   <div class="container">
     <h1 class="mb-4">Recherche & Développement</h1>
-    <p>Saisissez vos appareils <em>avec ou sans</em> préfixe <code>A36-C-</code> (séparés par espace, virgule ou point-virgule).</p>
+    <p>Entrez plusieurs appareils <em>avec ou sans</em> préfixe <code>A36-C-</code> ; séparez-les par espace, virgule ou point-virgule.</p>
 
     <p id="baseIndicator" class="text-muted">Base : inconnue</p>
     <p id="loadingMsg">⏳ Patientez, chargement du fichier NEC…</p>
 
     <div class="mb-3">
-      <label class="form-label">Charger un fichier NEC (.xlsb)&nbsp;:</label>
+      <label class="form-label">Charger NEC (.xlsb)&nbsp;:</label>
       <input type="file" id="fileInput" accept=".xlsb" class="form-control">
     </div>
 
     <div class="mb-3">
       <label class="form-label">Appareils :</label>
-      <textarea id="appareilsInput" rows="2" class="form-control" placeholder="Ex : VEDDH603C1 TR1234 STT701"></textarea>
+      <textarea id="appareilsInput" rows="2" class="form-control"></textarea>
     </div>
 
-    <button id="btnSearch" class="btn btn-primary mb-3">Rechercher</button>
-    <button id="btnExportAll" class="btn btn-success mb-3 ms-2">Exporter tout</button>
-    <button id="btnExportNonTires" class="btn btn-warning mb-3 ms-2">Exporter non tirés</button>
-    <button id="btnExportOkAppareils" class="btn btn-info mb-3 ms-2">Exporter appareils OK</button>
+    <button class="btn btn-primary mb-3" id="btnSearch">Rechercher</button>
+    <button class="btn btn-success  mb-3 ms-2" id="btnExportAll">Exporter tout</button>
+    <button class="btn btn-warning  mb-3 ms-2" id="btnExportNonTires">Exporter non tirés</button>
+    <button class="btn btn-info     mb-3 ms-2" id="btnExportOkAppareils">Exporter appareils OK</button>
 
     <div id="resultsArea"></div>
   </div>
 
   <script>
-    /* --- Helpers --- */
-    const strip = s => String(s||"").replace(/^A36-C-/i,"").toUpperCase();
-    const COLUMNS = ["APA","APO","PT_CBL","RESP_TIRAGE","GAM","STT_CBL_BORD","LOCAL_APA","LOT_MTG_APA","LOCAL_APO","LOT_MTG_APO"];
+    /* --- helpers --- */
+    const stripPrefix = s => String(s||"").replace(/^A36-C-/i,"").toUpperCase();
 
-    let cables = [];
-    let globalResults = [];
+    let cables = [];          // base consolidée
+    let globalResults = [];   // pour les exports
     let currentBase = "inconnue";
 
-    const qs = sel => document.querySelector(sel);
-    const updateBase = () => qs("#baseIndicator").textContent = `Base : ${currentBase}`;
+    const columnsOfInterest = [
+      "APA","APO","PT_CBL","RESP_TIRAGE","GAM","STT_CBL_BORD",
+      "LOCAL_APA","LOT_MTG_APA","LOCAL_APO","LOT_MTG_APO"
+    ];
 
+    const q = sel => document.querySelector(sel);
+    const updateBase = () => q("#baseIndicator").textContent = `Base : ${currentBase}`;
+
+    /* === initialisation === */
     window.addEventListener("load", () => {
-      qs("#fileInput").addEventListener("change", handleFileXLSB);
-      qs("#btnSearch").addEventListener("click", searchMultiAppareils);
-      qs("#btnExportAll").addEventListener("click", () => exportExcel(false));
-      qs("#btnExportNonTires").addEventListener("click", () => exportExcel(true));
-      qs("#btnExportOkAppareils").addEventListener("click", exportOkAppareils);
+      q("#fileInput").addEventListener("change", handleFileXLSB);
+      q("#btnSearch").addEventListener("click", searchMultiAppareils);
+      q("#btnExportAll").addEventListener("click", () => exportExcel(false));
+      q("#btnExportNonTires").addEventListener("click", () => exportExcel(true));
+      q("#btnExportOkAppareils").addEventListener("click", exportOkAppareils);
       loadFromJSON();
     });
 
@@ -79,64 +84,70 @@
     async function loadFromJSON() {
       currentBase = "JSON par défaut"; updateBase();
       const merged = {};
-      for (const col of COLUMNS) {
+      for (const col of columnsOfInterest) {
         try {
           const res = await fetch(`json/cables_${col}.json`);
           if (!res.ok) continue;
           const rows = await res.json();
           rows.forEach(r => {
-            const id = strip(r.CBL);
+            const id = stripPrefix(r.CBL);
             if (!merged[id]) merged[id] = { CBL: id };
-            merged[id][col] = typeof r[col]==="string" ? strip(r[col]) : r[col];
+            merged[id][col] = r[col];
           });
-        } catch (e) { console.warn("JSON", col, e); }
+        } catch (e) { console.warn(col, e); }
       }
       cables = Object.values(merged);
     }
 
     /* --- 2. Chargement XLSB --- */
     function handleFileXLSB(e) {
-      const file = e.target.files[0]; if (!file) return;
-      qs("#loadingMsg").style.display = "block";
+      const f = e.target.files[0]; if (!f) return;
+      q("#loadingMsg").style.display = "block";
       const fr = new FileReader();
       fr.onload = ev => parseXLSB(new Uint8Array(ev.target.result));
-      fr.readAsArrayBuffer(file);
+      fr.readAsArrayBuffer(f);
     }
     function parseXLSB(buf) {
       try {
-        const wb = XLSX.read(buf, { type: "array" });
-        const sheetName = wb.SheetNames.find(n => /cables/i.test(n));
-        if (!sheetName) return alert("Feuille 'Cables' non trouvée !");
-        const raw = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: "" });
+        const wb = XLSX.read(buf,{type:"array"});
+        const sheet = wb.SheetNames.find(n=>/cables/i.test(n));
+        if (!sheet) { alert("Feuille 'Cables' non trouvée !"); return; }
+        const raw = XLSX.utils.sheet_to_json(wb.Sheets[sheet],{defval:""});
         const merged = {};
-        raw.forEach(r => {
-          const id = strip(r.CBL);
-          if (!merged[id]) merged[id] = { CBL: id };
-          COLUMNS.forEach(c => merged[id][c] = typeof r[c]==="string" ? strip(r[c]) : r[c]);
+        raw.forEach(r=>{
+          const id = stripPrefix(r.CBL);
+          if (!merged[id]) merged[id] = { CBL:id };
+          columnsOfInterest.forEach(c=> merged[id][c] = r[c]);
         });
         cables = Object.values(merged);
         currentBase = "Fichier NEC"; updateBase();
         alert(`NEC chargé : ${cables.length} câbles`);
-      } catch (e) { alert("Erreur XLSB : " + e.message); }
-      finally { qs("#loadingMsg").style.display = "none"; }
+      } catch (e) { alert("Erreur XLSB : "+e.message); }
+      finally { q("#loadingMsg").style.display = "none"; }
     }
 
     /* --- 3. Recherche multi-appareils --- */
     function searchMultiAppareils() {
-      const appareils = qs("#appareilsInput").value.split(/[\\s,;]+/)
-                            .filter(Boolean).map(strip);
+      const appareils = q("#appareilsInput").value.split(/[\\s,;]+/)
+                          .filter(Boolean).map(a => stripPrefix(a));
       if (!appareils.length) return;
-      const zone = qs("#resultsArea"); zone.innerHTML = ""; globalResults = [];
+
+      const zone = q("#resultsArea"); zone.innerHTML = "";
+      globalResults = [];
 
       appareils.forEach(app => {
-        const found = cables.filter(c => strip(c.APA) === app || strip(c.APO) === app);
-        zone.innerHTML += buildTable(app, found);
+        // filtre en ignorant le préfixe
+        const found = cables.filter(c =>
+          stripPrefix(c.APA) === app || stripPrefix(c.APO) === app
+        );
+
+        zone.innerHTML += buildTableForApp(app, found);
 
         found.forEach(c => {
-          const isAPA = strip(c.APA) === app;
+          const isAPA = stripPrefix(c.APA) === app;
           globalResults.push({
             Appareil: app,
-            Câble: c.CBL,
+            Câble: stripPrefix(c.CBL),
             PT_CBL: c.PT_CBL || "",
             GAM: c.GAM || "",
             Statut: c.STT_CBL_BORD || "",
@@ -148,16 +159,21 @@
       });
     }
 
-    function buildTable(app, list) {
+    /* table html */
+    function buildTableForApp(app, list) {
       if (!list.length) return `<h4>${app}</h4><div class="alert alert-warning">Aucun câble trouvé.</div>`;
+
       const any = list[0];
-      const loc = strip(any.APA) === app ? any.LOCAL_APA : any.LOCAL_APO;
-      const lot = strip(any.APA) === app ? any.LOT_MTG_APA : any.LOT_MTG_APO;
+      const loc = stripPrefix(any.APA) === app ? any.LOCAL_APA : any.LOCAL_APO;
+      const lot = stripPrefix(any.APA) === app ? any.LOT_MTG_APA : any.LOT_MTG_APO;
 
       const rows = list.map(c => `
         <tr>
-          <td>${app}</td><td>${c.CBL}</td><td>${c.PT_CBL || "-"}</td>
-          <td>${c.RESP_TIRAGE || "-"}</td><td>${c.GAM || "-"}</td>
+          <td>${app}</td>
+          <td>${stripPrefix(c.CBL)}</td>
+          <td>${c.PT_CBL || "-"}</td>
+          <td>${c.RESP_TIRAGE || "-"}</td>
+          <td>${c.GAM || "-"}</td>
           <td>${c.STT_CBL_BORD || "-"}</td>
         </tr>`).join("");
 
@@ -170,7 +186,8 @@
             <table class="table table-bordered">
               <thead class="table-light">
                 <tr><th>Appareil</th><th>Câble</th><th>PT_CBL</th><th>Resp. Tirage</th><th>GAM</th><th>Statut</th></tr>
-              </thead><tbody>${rows}</tbody>
+              </thead>
+              <tbody>${rows}</tbody>
             </table>
           </div>
         </div>`;
@@ -180,11 +197,9 @@
     function exportExcel(nonTires) {
       let data = nonTires ? globalResults.filter(r => r.Statut.toUpperCase() !== "T") : globalResults;
       if (!data.length) return alert("Aucune donnée à exporter.");
-      const ws = XLSX.utils.json_to_sheet(data, {
-        header: ["Appareil","Câble","PT_CBL","GAM","Statut","RespTirage","Local","Lot"]
-      });
+      const ws = XLSX.utils.json_to_sheet(data,{header:["Appareil","Câble","PT_CBL","GAM","Statut","RespTirage","Local","Lot"]});
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Export");
+      XLSX.utils.book_append_sheet(wb,ws,"Export");
       XLSX.writeFile(wb, nonTires ? "non_tires.xlsx" : "all.xlsx");
     }
 
@@ -192,24 +207,22 @@
     function exportOkAppareils() {
       const map = {};
       globalResults.forEach(r => {
-        const d = map[r.Appareil] ||= { ok: true, loc: new Set(), lot: new Set() };
-        if (r.Statut.toUpperCase() !== "T") d.ok = false;
+        const d = map[r.Appareil] ||= { ok:true, loc:new Set(), lot:new Set() };
+        if (r.Statut.toUpperCase() !== "T") d.ok=false;
         if (r.Local) d.loc.add(r.Local);
         if (r.Lot)   d.lot.add(r.Lot);
       });
-      const arr = Object.entries(map).filter(([,d]) => d.ok).map(([app,d]) => ({
+      const arr = Object.entries(map).filter(([,d])=>d.ok).map(([app,d])=>({
         Appareil: app,
         Local: [...d.loc].join(", "),
         Lot:   [...d.lot].join(", "),
         SGDTEL_OK: "OK"
       }));
       if (!arr.length) return alert("Aucun appareil avec tous les câbles T.");
-      const ws = XLSX.utils.json_to_sheet(arr, {
-        header: ["Appareil","Local","Lot","SGDTEL_OK"]
-      });
+      const ws = XLSX.utils.json_to_sheet(arr,{header:["Appareil","Local","Lot","SGDTEL_OK"]});
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "OK");
-      XLSX.writeFile(wb, "appareils_allT.xlsx");
+      XLSX.utils.book_append_sheet(wb,ws,"OK");
+      XLSX.writeFile(wb,"appareils_allT.xlsx");
     }
   </script>
 
