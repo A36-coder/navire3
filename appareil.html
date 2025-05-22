@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>📡 Rechercher un appareil (préfixes supprimés)</title>
+  <title>🔍 Rechercher un câble (Autocomplétion)</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     #suggestions{position:absolute;z-index:1000;width:100%;background:#fff;border:1px solid #ccc;border-radius:0 0 4px 4px;max-height:200px;overflow-y:auto}
@@ -10,14 +10,15 @@
   </style>
 </head>
 <body class="p-4 bg-light">
+  <!-- Navbar (identique) -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
     <div class="container-fluid">
       <a class="navbar-brand" href="index.html">📊 Câbles Viewer</a>
       <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav">
-          <li class="nav-item"><a class="nav-link" href="index.html">🔍 Rechercher Câble</a></li>
-          <li class="nav-item"><a class="nav-link active" href="appareil.html">📡 Rechercher Appareil</a></li>
+          <li class="nav-item"><a class="nav-link active" href="index.html">🔍 Rechercher Câble</a></li>
+          <li class="nav-item"><a class="nav-link" href="appareil.html">📡 Rechercher Appareil</a></li>
           <li class="nav-item"><a class="nav-link" href="generate.html">🛠 Générer JSON</a></li>
           <li class="nav-item"><a class="nav-link" href="rd.html">🔎 R&D</a></li>
         </ul>
@@ -26,10 +27,10 @@
   </nav>
 
   <div class="container position-relative">
-    <h1 class="mb-4">📡 Rechercher un appareil</h1>
+    <h1 class="mb-4">🔍 Rechercher un câble (autocomplétion)</h1>
 
     <div class="input-group mb-3">
-      <input type="text" id="apInput" class="form-control" placeholder="Ex : E8AT26AE">
+      <input type="text" id="cblInput" class="form-control" placeholder="Ex : 46A2C1U2">
       <button class="btn btn-primary" id="searchBtn">Rechercher</button>
     </div>
 
@@ -38,75 +39,83 @@
   </div>
 
   <script>
-    const COLONNES=["APO","APA","STT_CBL_BORD","GAM"];
-    const strip=p=>String(p||"").replace(/^A36-C-/i,"").toUpperCase();
+    const colonnes = ["GAM","STT_CBL_BORD","RESP_TIRAGE","LOT_MTG_APO","APA",
+                      "LOT_MTG_APA","PT_CBL","COD_PLAN","LOCAL_APO","LOCAL_APA"];
 
-    let cables=[], devices=[];
+    const strip = s => String(s||"").replace(/^A36-C-/i,"").toUpperCase();
 
-    /* -------- Chargement JSON -------- */
-    (async()=>{
-      const merged={};
-      for(const col of COLONNES){
-        try{
-          const res=await fetch(`json/cables_${col}.json`);
-          const rows=await res.json();
-          rows.forEach(r=>{
-            const id=strip(r.CBL);
-            if(!merged[id]) merged[id]={CBL:id};
-            merged[id][col]=typeof r[col]==="string"?strip(r[col]):r[col];
-          });
-        }catch(e){console.warn("load",col,e)}
+    let dataMap = {};
+    let allCbls = [];
+
+    document.getElementById("searchBtn").addEventListener("click", searchCBL);
+    document.getElementById("cblInput").addEventListener("input", showSuggestions);
+    document.getElementById("cblInput").addEventListener("keydown", e=>{
+      if(e.key==="Enter"){e.preventDefault();searchCBL();}
+    });
+
+    /* --- Chargement JSON --- */
+    (async function loadAllData(){
+      const temp = {};
+      for(const col of colonnes){
+        const res = await fetch(`json/cables_${col}.json`);
+        const rows = await res.json();
+        rows.forEach(r=>{
+          const id = strip(r.CBL);
+          if(!temp[id]) temp[id] = { CBL:id };
+          temp[id][col] = typeof r[col]==="string" ? strip(r[col]) : r[col];
+        });
       }
-      cables=Object.values(merged);
-      const set=new Set();
-      cables.forEach(c=>{if(c.APA) set.add(c.APA); if(c.APO) set.add(c.APO);});
-      devices=[...set];
+      dataMap = temp;
+      allCbls = Object.keys(temp);        // suggestions sans préfixe
     })();
 
-    /* -------- Recherche -------- */
-    function search(){
-      const q=strip(document.getElementById("apInput").value.trim());
-      if(!q) return;
-      hideSug();
-      const rows=cables.filter(c=>c.APA===q||c.APO===q);
-      render(rows,q);
+    /* --- Recherche --- */
+    function searchCBL(){
+      const raw = document.getElementById("cblInput").value.trim().toUpperCase();
+      const code = strip(raw);
+      if(!code) return;
+      hideSuggestions();
+
+      const cable = dataMap[code];
+      const resultDiv = document.getElementById("result");
+      if(!cable){
+        resultDiv.innerHTML = `<div class="alert alert-danger">Câble "${raw}" non trouvé.</div>`;
+        return;
+      }
+
+      let html = `<div class="card mb-3">
+        <div class="card-header bg-primary text-white">🔌 Câble : ${cable.CBL}</div>
+        <div class="card-body"><ul class="list-unstyled">`;
+      for(const key of colonnes){
+        const val = typeof cable[key]==="string" ? strip(cable[key]) : (cable[key]||"-");
+        html += `<li><strong>${key}:</strong> ${val}</li>`;
+      }
+      html += `</ul></div></div>`;
+      resultDiv.innerHTML = html;
     }
 
-    function render(rows,dev){
-      const box=document.getElementById("result");
-      if(!rows.length){box.innerHTML=`<div class="alert alert-warning">Aucun câble lié à « ${dev} ».</div>`;return;}
-      let html=`<h4>${rows.length} câble(s) pour « ${dev} » :</h4><div class="table-responsive mt-3"><table class="table table-bordered"><thead class="table-light"><tr><th>Câble</th><th>Statut</th><th>GAM</th><th>Direction</th></tr></thead><tbody>`;
-      rows.forEach(c=>{
-        const dir=c.APA===dev?"Arrivée (APA)":c.APO===dev?"Départ (APO)":"-";
-        html+=`<tr><td>${c.CBL}</td><td>${c.STT_CBL_BORD||"-"}</td><td>${c.GAM||"-"}</td><td>${dir}</td></tr>`;
+    /* --- Autocomplétion --- */
+    function showSuggestions(){
+      const input = strip(document.getElementById("cblInput").value.trim());
+      const sugDiv = document.getElementById("suggestions");
+      sugDiv.innerHTML = "";
+      if(!input){hideSuggestions();return;}
+
+      const matches = allCbls.filter(id=>id.includes(input)).slice(0,15);
+      if(!matches.length){hideSuggestions();return;}
+
+      matches.forEach(id=>{
+        const item = document.createElement("div");
+        item.className = "list-group-item list-group-item-action";
+        item.textContent = id;            // affichage sans préfixe
+        item.onclick = ()=>{document.getElementById("cblInput").value=id;hideSuggestions();searchCBL();};
+        sugDiv.appendChild(item);
       });
-      html+=`</tbody></table></div>`;
-      box.innerHTML=html;
+      sugDiv.style.display="block";
     }
-
-    /* -------- Autocomplétion -------- */
-    function showSug(){
-      const val=strip(document.getElementById("apInput").value.trim());
-      const box=document.getElementById("suggestions");
-      box.innerHTML="";
-      if(!val){hideSug();return;}
-      const list=devices.filter(d=>d.includes(val)).slice(0,15);
-      if(!list.length){hideSug();return;}
-      list.forEach(d=>{
-        const el=document.createElement("div");
-        el.className="list-group-item list-group-item-action";
-        el.textContent=d;
-        el.onclick=()=>{document.getElementById("apInput").value=d;hideSug();search();};
-        box.appendChild(el);
-      });
-      box.style.display="block";
-    }
-    function hideSug(){document.getElementById("suggestions").style.display="none";}
-
-    document.getElementById("searchBtn").onclick=search;
-    document.getElementById("apInput").oninput=showSug;
-    document.getElementById("apInput").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();search();}};
+    function hideSuggestions(){document.getElementById("suggestions").style.display="none";}
   </script>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
