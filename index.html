@@ -72,11 +72,7 @@
           const rawId = row.CBL;
           const id = stripPrefix(rawId);
           if (!temp[id]) temp[id] = { CBL: id };
-          if (typeof row[col] === "string") {
-            temp[id][col] = stripPrefix(row[col]);
-          } else {
-            temp[id][col] = row[col];
-          }
+          temp[id][col] = row[col];
         });
       }
       dataMap = temp;
@@ -101,7 +97,7 @@
         <div class="card-body">
           <ul class="list-unstyled">`;
       for (const key of colonnes) {
-        html += `<li><strong>${key}:</strong> ${typeof cable[key] === "string" ? stripPrefix(cable[key]) : (cable[key] || "-")}</li>`;
+        html += `<li><strong>${key}:</strong> ${cable[key] || "-"}</li>`;
       }
       html += `</ul></div></div>`;
       resultDiv.innerHTML = html;
