@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -63,24 +64,20 @@
           const rows = await res.json();
           rows.forEach(row => {
             const id = row.CBL;
-            if (!merged[id]) merged[id] = { CBL: id };
-            merged[id][col] = row[col];
+            if (!merged[id]) merged[id] = { CBL: stripPrefix(id) };
+            merged[id][col] = typeof row[col] === "string" ? stripPrefix(row[col]) : row[col];
           });
         } catch (e) {
           console.warn(`Erreur chargement cables_${col}.json`, e);
         }
       }
 
-      cables = Object.values(merged).map(c => ({
-        ...c,
-        APA_SHORT: stripPrefix(c.APA),
-        APO_SHORT: stripPrefix(c.APO)
-      }));
+      cables = Object.values(merged);
 
       const set = new Set();
       cables.forEach(c => {
-        if (c.APA_SHORT) set.add(c.APA_SHORT);
-        if (c.APO_SHORT) set.add(c.APO_SHORT);
+        if (c.APA) set.add(c.APA);
+        if (c.APO) set.add(c.APO);
       });
       devices = [...set];
     }
@@ -90,7 +87,7 @@
       if (!query) return;
       hideSug();
 
-      const found = cables.filter(c => c.APA_SHORT === query || c.APO_SHORT === query);
+      const found = cables.filter(c => c.APA === query || c.APO === query);
       render(found, query);
     }
 
@@ -109,8 +106,8 @@
       </thead><tbody>`;
       rows.forEach(c => {
         let dir = "-";
-        if (c.APA_SHORT === dev) dir = "Arrivée (APA)";
-        else if (c.APO_SHORT === dev) dir = "Départ (APO)";
+        if (c.APA === dev) dir = "Arrivée (APA)";
+        else if (c.APO === dev) dir = "Départ (APO)";
         html += `<tr><td>${c.CBL}</td><td>${c.STT_CBL_BORD || "-"}</td><td>${c.GAM || "-"}</td><td>${dir}</td></tr>`;
       });
       html += `</tbody></table></div>`;
