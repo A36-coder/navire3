@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>🔍 Rechercher un câble (Autocomplétion)</title>
+  <title>📡 Rechercher un appareil</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     #suggestions {
@@ -21,17 +21,14 @@
   </style>
 </head>
 <body class="p-4 bg-light">
-
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
     <div class="container-fluid">
       <a class="navbar-brand" href="index.html">📊 Câbles Viewer</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
+      <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav">
-          <li class="nav-item"><a class="nav-link active" href="index.html">🔍 Rechercher Câble</a></li>
-          <li class="nav-item"><a class="nav-link" href="appareil.html">📡 Rechercher Appareil</a></li>
+          <li class="nav-item"><a class="nav-link" href="index.html">🔍 Rechercher Câble</a></li>
+          <li class="nav-item"><a class="nav-link active" href="appareil.html">📡 Rechercher Appareil</a></li>
           <li class="nav-item"><a class="nav-link" href="generate.html">🛠 Générer JSON</a></li>
           <li class="nav-item"><a class="nav-link" href="rd.html">🔎 R&D</a></li>
         </ul>
@@ -40,10 +37,10 @@
   </nav>
 
   <div class="container position-relative">
-    <h1 class="mb-4">🔍 Rechercher un câble (autocomplétion)</h1>
+    <h1 class="mb-4">📡 Rechercher un appareil</h1>
 
     <div class="input-group mb-3">
-      <input type="text" id="cblInput" class="form-control" placeholder="Ex : 46A2C1U2">
+      <input type="text" id="apInput" class="form-control" placeholder="Ex : E8AT26AE ou A36-C-E8AT26AE">
       <button class="btn btn-primary" id="searchBtn">Rechercher</button>
     </div>
 
@@ -52,101 +49,111 @@
   </div>
 
   <script>
-    const colonnes = ["GAM", "STT_CBL_BORD", "RESP_TIRAGE", "LOT_MTG_APO", "APA",
-                      "LOT_MTG_APA", "PT_CBL", "COD_PLAN", "LOCAL_APO", "LOCAL_APA"];
-    let dataMap = {};
-    let allCbls = [];
+    const COLONNES = ["APO", "APA", "STT_CBL_BORD", "GAM"];
+    const stripPrefix = str => String(str || "").replace(/^A36-C-/i, "").toUpperCase();
 
-    const stripPrefix = id => String(id || "").replace(/^A36-C-/i, "");
+    let cables = [];
+    let devices = [];
 
-    document.getElementById("searchBtn").addEventListener("click", searchCBL);
-    document.getElementById("cblInput").addEventListener("input", showSuggestions);
-    document.getElementById("cblInput").addEventListener("keydown", handleKeyDown);
-
-    async function loadAllData() {
-      let temp = {};
-      for (const col of colonnes) {
-        const res = await fetch(`json/cables_${col}.json`);
-        const rows = await res.json();
-        rows.forEach(row => {
-          const rawId = row.CBL;
-          const id = stripPrefix(rawId);
-          if (!temp[id]) temp[id] = { CBL: id };
-          temp[id][col] = row[col];
-        });
+    async function loadData() {
+      const merged = {};
+      for (const col of COLONNES) {
+        try {
+          const res = await fetch(`json/cables_${col}.json`);
+          const rows = await res.json();
+          rows.forEach(row => {
+            const id = row.CBL;
+            if (!merged[id]) merged[id] = { CBL: id };
+            merged[id][col] = row[col];
+          });
+        } catch (e) {
+          console.warn(`Erreur chargement cables_${col}.json`, e);
+        }
       }
-      dataMap = temp;
-      allCbls = Object.keys(temp);
+
+      cables = Object.values(merged).map(c => ({
+        ...c,
+        APA_SHORT: stripPrefix(c.APA),
+        APO_SHORT: stripPrefix(c.APO)
+      }));
+
+      const set = new Set();
+      cables.forEach(c => {
+        if (c.APA_SHORT) set.add(c.APA_SHORT);
+        if (c.APO_SHORT) set.add(c.APO_SHORT);
+      });
+      devices = [...set];
     }
 
-    function searchCBL() {
-      const codeInput = document.getElementById("cblInput").value.trim().toUpperCase();
-      const code = stripPrefix(codeInput);
-      if (!code) return;
-      const cable = dataMap[code];
-      const resultDiv = document.getElementById("result");
-      hideSuggestions();
+    function search() {
+      const query = stripPrefix(document.getElementById("apInput").value.trim().toUpperCase());
+      if (!query) return;
+      hideSug();
 
-      if (!cable) {
-        resultDiv.innerHTML = `<div class="alert alert-danger">Câble "${codeInput}" non trouvé.</div>`;
+      const found = cables.filter(c => c.APA_SHORT === query || c.APO_SHORT === query);
+      render(found, query);
+    }
+
+    function render(rows, dev) {
+      const box = document.getElementById("result");
+      if (!rows.length) {
+        box.innerHTML = `<div class="alert alert-warning">Aucun câble lié à l'appareil « ${dev} ».</div>`;
         return;
       }
 
-      let html = `<div class="card mb-3">
-        <div class="card-header bg-primary text-white">🔌 Câble : ${cable.CBL}</div>
-        <div class="card-body">
-          <ul class="list-unstyled">`;
-      for (const key of colonnes) {
-        html += `<li><strong>${key}:</strong> ${cable[key] || "-"}</li>`;
-      }
-      html += `</ul></div></div>`;
-      resultDiv.innerHTML = html;
+      let html = `<h4>${rows.length} câble(s) pour « ${dev} » :</h4>
+      <div class="table-responsive mt-3">
+      <table class="table table-bordered">
+      <thead class="table-light">
+        <tr><th>Câble</th><th>Statut</th><th>GAM</th><th>Direction</th></tr>
+      </thead><tbody>`;
+      rows.forEach(c => {
+        let dir = "-";
+        if (c.APA_SHORT === dev) dir = "Arrivée (APA)";
+        else if (c.APO_SHORT === dev) dir = "Départ (APO)";
+        html += `<tr><td>${c.CBL}</td><td>${c.STT_CBL_BORD || "-"}</td><td>${c.GAM || "-"}</td><td>${dir}</td></tr>`;
+      });
+      html += `</tbody></table></div>`;
+      box.innerHTML = html;
     }
 
-    function showSuggestions() {
-      const input = stripPrefix(document.getElementById("cblInput").value.trim().toUpperCase());
-      const sugDiv = document.getElementById("suggestions");
-      sugDiv.innerHTML = "";
+    function showSug() {
+      const input = stripPrefix(document.getElementById("apInput").value.trim().toUpperCase());
+      const box = document.getElementById("suggestions");
+      box.innerHTML = "";
       if (!input) {
-        hideSuggestions();
+        hideSug();
         return;
       }
-
-      const matches = allCbls.filter(cbl => cbl.includes(input)).slice(0, 15);
-      if (matches.length === 0) {
-        hideSuggestions();
+      const list = devices.filter(d => d.includes(input)).slice(0, 15);
+      if (!list.length) {
+        hideSug();
         return;
       }
-
-      matches.forEach(cbl => {
+      list.forEach(dev => {
         const item = document.createElement("div");
         item.className = "list-group-item list-group-item-action";
-        item.textContent = cbl;
-        item.addEventListener("click", () => {
-          document.getElementById("cblInput").value = cbl;
-          hideSuggestions();
-          searchCBL();
-        });
-        sugDiv.appendChild(item);
+        item.textContent = dev;
+        item.onclick = () => {
+          document.getElementById("apInput").value = dev;
+          hideSug();
+          search();
+        };
+        box.appendChild(item);
       });
-      sugDiv.style.display = "block";
+      box.style.display = "block";
     }
 
-    function hideSuggestions() {
-      document.getElementById("suggestions").innerHTML = "";
+    function hideSug() {
       document.getElementById("suggestions").style.display = "none";
     }
 
-    function handleKeyDown(e) {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        searchCBL();
-      }
-    }
+    document.getElementById("searchBtn").onclick = search;
+    document.getElementById("apInput").oninput = showSug;
+    document.getElementById("apInput").onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); search(); } };
 
-    loadAllData();
+    loadData();
   </script>
-
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
