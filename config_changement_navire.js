@@ -17,7 +17,13 @@ const GITHUB = {
   REPO: 'pvarc/elec/json'
 };
 
+// Nom du navire
+const SHIP = {
+  NAME: 'NomDuNavire'
+};
+
 // Exporter les constantes pour les utiliser dans d'autres fichiers
 window.PREFIXES = PREFIXES;
 window.LINKS = LINKS;
 window.GITHUB = GITHUB;
+window.SHIP = SHIP;
