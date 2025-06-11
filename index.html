@@ -29,7 +29,7 @@
   <div class="container">
     <h1 class="mb-4">Bienvenue sur le site de gestion des câbles et appareils</h1>
 
-    <p>Ce site est conçu pour aider à la gestion des câbles et des appareils sur le navire A36, en se basant sur le NEC (Nomenclature des Equipements de Câblage). Bien que les données soient mises à jour manuellement dans cette version, une version future permettra une mise à jour automatique des données.</p>
+    <p>Ce site est conçu pour aider à la gestion des câbles et des appareils sur le navire <span id="shipName"></span>, en se basant sur le NEC (Nomenclature des Equipements de Câblage). Bien que les données soient mises à jour manuellement dans cette version, une version future permettra une mise à jour automatique des données.</p>
 
     <h2>Objectifs du site</h2>
     <p>Le site permet d'accéder à différentes fonctionnalités :</p>
@@ -39,7 +39,7 @@
       <li><strong>Onglet R&D</strong> : Permet d'étudier plusieurs appareils à la fois, par exemple en copiant et collant une colonne Excel contenant des appareils, et de voir leur statut de câblage. Cette section permet également d'exporter les câbles non tirés pour demander leur statut ou d'exporter les appareils dont tous les câbles sont déclarés tirés pour une demande de branchement.</li>
     </ul>
 
-    <p>Les données utilisées sont basées sur le NEC et sont relatives au navire A36, mais le site peut facilement être adapté à d'autres navires qui suivent la même structure de NEC.</p>
+    <p>Les données utilisées sont basées sur le NEC et sont relatives au navire <span id="shipName"></span>, mais le site peut facilement être adapté à d'autres navires qui suivent la même structure de NEC.</p>
 
     <h2>Documents utiles</h2>
     <p>Pour plus de détails sur la mise à jour des fichiers ou l'adaptation du site à un autre navire, consultez le guide suivant :</p>
@@ -48,10 +48,20 @@
     </ul>
 
     <footer class="mt-5">
-      <p>Site conçu pour le navire N34, adaptable à d'autres navires utilisant une structure de NEC similaire.</p>
+      <p>Site conçu pour le navire <span id="shipName"></span>, adaptable à d'autres navires utilisant une structure de NEC similaire.</p>
     </footer>
   </div>
 
+  <script src="config_changement_navire.js"></script>
+  <script>
+    // Utiliser la constante SHIP.NAME pour afficher le nom du navire
+    document.addEventListener('DOMContentLoaded', (event) => {
+      const shipNameElements = document.querySelectorAll('#shipName');
+      shipNameElements.forEach(element => {
+        element.textContent = window.SHIP.NAME;
+      });
+    });
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
