@@ -19,7 +19,7 @@ const GITHUB = {
 
 // Nom du navire
 const SHIP = {
-  NAME: 'NomDuNavire'
+  NAME: 'A36'
 };
 
 // Exporter les constantes pour les utiliser dans d'autres fichiers
