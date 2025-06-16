@@ -3,7 +3,7 @@
 // Préfixes pour les appareils spécifiques au navire
 const PREFIXES = {
   APPAREIL_PREFIX: 'A36-',
-  APPAREIL_C_PREFIX: 'A36-C-'
+  CABLE_PREFIX: 'A36-C-'
 };
 
 // Lien pour télécharger le fichier NEC spécifique au navire
