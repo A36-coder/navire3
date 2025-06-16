@@ -55,7 +55,7 @@
   <script src="config_changement_navire.js"></script>
   <script>
     /* Configuration */
-    const COLS = ["APO", "APA", "STT_CBL_BORD", "GAM", "TYPE_CABLE", "LOT_MTG_APO", "LOT_MTG_APA", "LOCAL_APA", "LOCAL_APO"];
+    const COLS = window.COLUMNS;
     const strip = s => String(s || "").replace(new RegExp(`^${window.PREFIXES.APPAREIL_PREFIX}`, 'i'), "").toUpperCase();
 
     /* Data */
@@ -66,7 +66,7 @@
       const merged = {};
       for (const col of COLS) {
         try {
-          const res = await fetch(`json/cables_${col}.json`);
+          const res = await fetch(`${window.JSON_FILES.CABLES_PREFIX}${col}${window.JSON_FILES.JSON_EXTENSION}`);
           const rows = await res.json();
           rows.forEach(r => {
             const id = strip(r.CBL);
@@ -115,7 +115,6 @@
           <thead class="table-light">
             <tr>
               <th>Câble</th>
-              <th>Type</th>
               <th>Statut</th>
               <th>GAM</th>
               <th>Direction</th>
@@ -127,7 +126,6 @@
         const dir = c.APA === dev ? "Arrivée (APA)" : c.APO === dev ? "Départ (APO)" : "-";
         html += `<tr>
           <td>${c.CBL}</td>
-          <td>${c.TYPE_CABLE || "-"}</td>
           <td>${c.STT_CBL_BORD || "-"}</td>
           <td>${c.GAM || "-"}</td>
           <td>${dir}</td>
