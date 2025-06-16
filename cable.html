@@ -2,14 +2,14 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>🔍 Rechercher un câble (Autocomplétion)</title>
+  <title>📡 Rechercher un appareil</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     #suggestions {
       position: absolute;
       z-index: 1000;
       width: 100%;
-      background: white;
+      background: #fff;
       border: 1px solid #ccc;
       border-radius: 0 0 4px 4px;
       max-height: 200px;
@@ -21,7 +21,7 @@
   </style>
 </head>
 <body class="p-4 bg-light">
-
+  <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
     <div class="container-fluid">
       <a class="navbar-brand" href="index.html">📊 Câbles Viewer</a>
@@ -31,8 +31,8 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav">
           <li class="nav-item"><a class="nav-link active" href="index.html">🏠 Accueil</a></li>
-          <li class="nav-item"><a class="nav-link active" href="cable.html">🔍 Rechercher Câble</a></li>
-          <li class="nav-item"><a class="nav-link" href="appareil.html">📡 Rechercher Appareil</a></li>
+          <li class="nav-item"><a class="nav-link" href="cable.html">🔍 Rechercher Câble</a></li>
+          <li class="nav-item"><a class="nav-link active" href="appareil.html">📡 Rechercher Appareil</a></li>
           <li class="nav-item"><a class="nav-link" href="generate.html">🛠 Générer JSON</a></li>
           <li class="nav-item"><a class="nav-link" href="rd.html">🔎 R&D</a></li>
         </ul>
@@ -41,10 +41,10 @@
   </nav>
 
   <div class="container position-relative">
-    <h1 class="mb-4">🔍 Rechercher un câble (autocomplétion)</h1>
+    <h1 class="mb-4">📡 Rechercher un appareil</h1>
 
     <div class="input-group mb-3">
-      <input type="text" id="cblInput" class="form-control" placeholder="Ex : 46A2C1U2">
+      <input type="text" id="apInput" class="form-control" placeholder="Ex : E8AT26AE ou A36-E8AT26AE">
       <button class="btn btn-primary" id="searchBtn">Rechercher</button>
     </div>
 
@@ -52,141 +52,134 @@
     <div id="result" class="mt-4"></div>
   </div>
 
-  <!-- Chargez d'abord le fichier de configuration -->
   <script src="config_changement_navire.js"></script>
-
   <script>
-    // Attendez que le DOM soit entièrement chargé
-    document.addEventListener('DOMContentLoaded', function() {
-      const colonnes = ["GAM", "STT_CBL_BORD", "RESP_TIRAGE", "LOT_MTG_APO", "LOCAL_APO", "APO", "LOT_MTG_APA", "LOCAL_APA", "APA", "PT_CBL", "COD_PLAN"];
-      let dataMap = {};
-      let allCbls = [];
+    /* Configuration */
+    const COLS = ["APO", "APA", "STT_CBL_BORD", "GAM", "TYPE_CABLE", "LOT_MTG_APO", "LOT_MTG_APA", "LOCAL_APA", "LOCAL_APO"];
+    const strip = s => String(s || "").replace(new RegExp(`^${window.PREFIXES.APPAREIL_PREFIX}`, 'i'), "").toUpperCase();
 
-      const stripPrefix = id => String(id || "").replace(new RegExp(`^${window.PREFIXES.CABLE_PREFIX}`, 'i'), "");
+    /* Data */
+    let cables = []; // [{CBL, APA, APO, LOT_MTG_APO, LOT_MTG_APA, LOCAL_APA, LOCAL_APO, ...}]
+    let devices = []; // Liste unique pour l'autocomplétion
 
-      document.getElementById("searchBtn").addEventListener("click", searchCBL);
-      document.getElementById("cblInput").addEventListener("input", showSuggestions);
-      document.getElementById("cblInput").addEventListener("keydown", handleKeyDown);
-
-      async function loadAllData() {
-        let temp = {};
-        for (const col of colonnes) {
-          try {
-            const res = await fetch(`json/cables_${col}.json`);
-            const rows = await res.json();
-            rows.forEach(row => {
-              const rawId = row.CBL;
-              const id = stripPrefix(rawId);
-              if (!temp[id]) temp[id] = { CBL: id };
-              temp[id][col] = row[col];
-            });
-          } catch (e) {
-            console.warn("Erreur lors du chargement des données pour la colonne", col, e);
-          }
-        }
-        dataMap = temp;
-        allCbls = Object.keys(temp);
-      }
-
-      function searchCBL() {
-        const codeInput = document.getElementById("cblInput").value.trim().toUpperCase();
-        const code = stripPrefix(codeInput);
-        if (!code) return;
-        const cable = dataMap[code];
-        const resultDiv = document.getElementById("result");
-        hideSuggestions();
-
-        if (!cable) {
-          resultDiv.innerHTML = `<div class="alert alert-danger">Câble "${codeInput}" non trouvé.</div>`;
-          return;
-        }
-
-        let html = `
-          <div class="card mb-3">
-            <div class="card-header bg-primary text-white">🔌 Câble : ${cable.CBL}</div>
-            <div class="card-body">
-              <h5 class="card-title">Informations générales</h5>
-              <ul class="list-unstyled">
-                <li><strong>GAM:</strong> ${cable.GAM || "-"}</li>
-                <li><strong>Statut du câble à bord:</strong> ${cable.STT_CBL_BORD || "-"}</li>
-                <li><strong>Responsable du tirage:</strong> ${cable.RESP_TIRAGE || "-"}</li>
-              </ul>
-              <h5 class="card-title mt-4">Détails APO et APA</h5>
-              <table class="table table-bordered">
-                <thead>
-                  <tr>
-                    <th>APO</th>
-                    <th>APA</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>${cable.APO || "-"}</td>
-                    <td>${cable.APA || "-"}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Lot Montage APO:</strong> ${cable.LOT_MTG_APO || "-"}</td>
-                    <td><strong>Lot Montage APA:</strong> ${cable.LOT_MTG_APA || "-"}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Local APO:</strong> ${cable.LOCAL_APO || "-"}</td>
-                    <td><strong>Local APA:</strong> ${cable.LOCAL_APA || "-"}</td>
-                  </tr>
-                </tbody>
-              </table>
-              <ul class="list-unstyled">
-                <li><strong>Point de câble:</strong> ${cable.PT_CBL || "-"}</li>
-                <li><strong>Code Plan:</strong> ${cable.COD_PLAN || "-"}</li>
-              </ul>
-            </div>
-          </div>
-        `;
-        resultDiv.innerHTML = html;
-      }
-
-      function showSuggestions() {
-        const input = stripPrefix(document.getElementById("cblInput").value.trim().toUpperCase());
-        const sugDiv = document.getElementById("suggestions");
-        sugDiv.innerHTML = "";
-        if (!input) {
-          hideSuggestions();
-          return;
-        }
-
-        const matches = allCbls.filter(cbl => cbl.includes(input)).slice(0, 15);
-        if (matches.length === 0) {
-          hideSuggestions();
-          return;
-        }
-
-        matches.forEach(cbl => {
-          const item = document.createElement("div");
-          item.className = "list-group-item list-group-item-action";
-          item.textContent = cbl;
-          item.addEventListener("click", () => {
-            document.getElementById("cblInput").value = cbl;
-            hideSuggestions();
-            searchCBL();
+    (async function loadJSON() {
+      const merged = {};
+      for (const col of COLS) {
+        try {
+          const res = await fetch(`json/cables_${col}.json`);
+          const rows = await res.json();
+          rows.forEach(r => {
+            const id = strip(r.CBL);
+            if (!merged[id]) merged[id] = { CBL: id };
+            merged[id][col] = typeof r[col] === "string" ? strip(r[col]) : r[col];
           });
-          sugDiv.appendChild(item);
-        });
-        sugDiv.style.display = "block";
-      }
-
-      function hideSuggestions() {
-        document.getElementById("suggestions").innerHTML = "";
-        document.getElementById("suggestions").style.display = "none";
-      }
-
-      function handleKeyDown(e) {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          searchCBL();
+        } catch (e) {
+          console.warn("Chargement JSON", col, e);
         }
       }
+      cables = Object.values(merged);
+      const set = new Set();
+      cables.forEach(c => {
+        if (c.APA) set.add(c.APA);
+        if (c.APO) set.add(c.APO);
+      });
+      devices = [...set]; // Liste des appareils sans préfixe
+    })();
 
-      loadAllData();
-    });
+    /* Recherche */
+    function search() {
+      const q = strip(document.getElementById("apInput").value.trim());
+      if (!q) return hideSug();
+
+      hideSug();
+      const rows = cables.filter(c => c.APA === q || c.APO === q);
+      render(rows, q);
+    }
+
+    function render(rows, dev) {
+      const box = document.getElementById("result");
+      if (!rows.length) {
+        box.innerHTML = `<div class="alert alert-warning">Aucun câble lié à « ${dev} ».</div>`;
+        return;
+      }
+
+      // Obtenez les informations du premier câble pour le titre
+      const firstCable = rows[0];
+      const appareil = firstCable.APA === dev ? strip(firstCable.APA) : strip(firstCable.APO);
+      const lot = firstCable.APA === dev ? firstCable.LOT_MTG_APA : firstCable.LOT_MTG_APO || "-";
+      const local = firstCable.APA === dev ? firstCable.LOCAL_APA : firstCable.LOCAL_APO || "-";
+
+      let html = `<h4>${rows.length} câble(s) pour « ${appareil} » (Lot: ${lot}, Local: ${local}) :</h4>
+      <div class="table-responsive mt-3">
+        <table class="table table-bordered">
+          <thead class="table-light">
+            <tr>
+              <th>Câble</th>
+              <th>Type</th>
+              <th>Statut</th>
+              <th>GAM</th>
+              <th>Direction</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+      rows.forEach(c => {
+        const dir = c.APA === dev ? "Arrivée (APA)" : c.APO === dev ? "Départ (APO)" : "-";
+        html += `<tr>
+          <td>${c.CBL}</td>
+          <td>${c.TYPE_CABLE || "-"}</td>
+          <td>${c.STT_CBL_BORD || "-"}</td>
+          <td>${c.GAM || "-"}</td>
+          <td>${dir}</td>
+        </tr>`;
+      });
+      html += `</tbody></table></div>`;
+      box.innerHTML = html;
+    }
+
+    /* Suggestions */
+    function showSug() {
+      const val = strip(document.getElementById("apInput").value.trim());
+      const box = document.getElementById("suggestions");
+      box.innerHTML = "";
+      if (!val) {
+        hideSug();
+        return;
+      }
+
+      const list = devices.filter(d => d.includes(val)).slice(0, 15); // recherche partielle
+      if (!list.length) {
+        hideSug();
+        return;
+      }
+
+      list.forEach(d => {
+        const el = document.createElement("div");
+        el.className = "list-group-item list-group-item-action";
+        el.textContent = d;
+        el.onclick = () => {
+          document.getElementById("apInput").value = d;
+          hideSug();
+          search();
+        };
+        box.appendChild(el);
+      });
+      box.style.display = "block";
+    }
+
+    function hideSug() {
+      document.getElementById("suggestions").style.display = "none";
+    }
+
+    /* Événements */
+    document.getElementById("searchBtn").onclick = search;
+    document.getElementById("apInput").oninput = showSug;
+    document.getElementById("apInput").onkeydown = e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        search();
+      }
+    };
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
