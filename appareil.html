@@ -55,7 +55,7 @@
   <script src="config_changement_navire.js"></script>
   <script>
     /* Configuration */
-    const COLS = ["APO", "APA", "STT_CBL_BORD", "GAM", "LOT_MTG_APO", "LOT_MTG_APA", "LOCAL_APA", "LOCAL_APO"];
+    const COLS = ["APO", "APA", "STT_CBL_BORD", "GAM", "TYPE_CABLE", "LOT_MTG_APO", "LOT_MTG_APA", "LOCAL_APA", "LOCAL_APO"];
     const strip = s => String(s || "").replace(new RegExp(`^${window.PREFIXES.APPAREIL_PREFIX}`, 'i'), "").toUpperCase();
 
     /* Data */
@@ -110,12 +110,28 @@
       const local = firstCable.APA === dev ? firstCable.LOCAL_APA : firstCable.LOCAL_APO || "-";
 
       let html = `<h4>${rows.length} câble(s) pour « ${appareil} » (Lot: ${lot}, Local: ${local}) :</h4>
-      <div class="table-responsive mt-3"><table class="table table-bordered">
-      <thead class="table-light"><tr><th>Câble</th><th>Statut</th><th>GAM</th><th>Direction</th></tr></thead><tbody>`;
+      <div class="table-responsive mt-3">
+        <table class="table table-bordered">
+          <thead class="table-light">
+            <tr>
+              <th>Câble</th>
+              <th>Type</th>
+              <th>Statut</th>
+              <th>GAM</th>
+              <th>Direction</th>
+            </tr>
+          </thead>
+          <tbody>`;
 
       rows.forEach(c => {
         const dir = c.APA === dev ? "Arrivée (APA)" : c.APO === dev ? "Départ (APO)" : "-";
-        html += `<tr><td>${c.CBL}</td><td>${c.STT_CBL_BORD || "-"}</td><td>${c.GAM || "-"}</td><td>${dir}</td></tr>`;
+        html += `<tr>
+          <td>${c.CBL}</td>
+          <td>${c.TYPE_CABLE || "-"}</td>
+          <td>${c.STT_CBL_BORD || "-"}</td>
+          <td>${c.GAM || "-"}</td>
+          <td>${dir}</td>
+        </tr>`;
       });
       html += `</tbody></table></div>`;
       box.innerHTML = html;
