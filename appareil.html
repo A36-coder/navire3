@@ -2,22 +2,32 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>📡 Rechercher un appareil (préfixe A36-C- supprimé)</title>
+  <title>📡 Rechercher un appareil</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    #suggestions{
-      position:absolute;z-index:1000;width:100%;background:#fff;border:1px solid #ccc;
-      border-radius:0 0 4px 4px;max-height:200px;overflow-y:auto
+    #suggestions {
+      position: absolute;
+      z-index: 1000;
+      width: 100%;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 0 0 4px 4px;
+      max-height: 200px;
+      overflow-y: auto;
     }
-    #suggestions .list-group-item{cursor:pointer}
+    #suggestions .list-group-item {
+      cursor: pointer;
+    }
   </style>
 </head>
 <body class="p-4 bg-light">
-  <!-- navbar conservée -->
+  <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
     <div class="container-fluid">
       <a class="navbar-brand" href="index.html">📊 Câbles Viewer</a>
-      <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav">
           <li class="nav-item"><a class="nav-link active" href="index.html">🏠 Accueil</a></li>
@@ -34,7 +44,7 @@
     <h1 class="mb-4">📡 Rechercher un appareil</h1>
 
     <div class="input-group mb-3">
-      <input type="text" id="apInput" class="form-control" placeholder="Ex : E8AT26AE ou A36-C-E8AT26AE">
+      <input type="text" id="apInput" class="form-control" placeholder="Ex : E8AT26AE ou A36-E8AT26AE">
       <button class="btn btn-primary" id="searchBtn">Rechercher</button>
     </div>
 
@@ -42,85 +52,110 @@
     <div id="result" class="mt-4"></div>
   </div>
 
+  <script src="config_changement_navire.js"></script>
   <script>
-    /* ---------- Config ---------- */
-    const COLS = ["APO","APA","STT_CBL_BORD","GAM"];
-    const strip = s => String(s||"").replace(/^A36-C-/i,"").toUpperCase();
+    /* Configuration */
+    const COLS = ["APO", "APA", "STT_CBL_BORD", "GAM"];
+    const strip = s => String(s || "").replace(new RegExp(`^${window.PREFIXES.APPAREIL_PREFIX}`, 'i'), "").toUpperCase();
 
-    /* ---------- Data ---------- */
-    let cables = [];   // [{CBL, APA, APO, ...}]
-    let devices = [];  // liste unique pour l’auto-complétion
+    /* Data */
+    let cables = []; // [{CBL, APA, APO, ...}]
+    let devices = []; // Liste unique pour l'autocomplétion
 
     (async function loadJSON() {
       const merged = {};
-      for (const col of COLS){
-        try{
-          const res  = await fetch(`json/cables_${col}.json`);
+      for (const col of COLS) {
+        try {
+          const res = await fetch(`json/cables_${col}.json`);
           const rows = await res.json();
-          rows.forEach(r=>{
+          rows.forEach(r => {
             const id = strip(r.CBL);
-            if(!merged[id]) merged[id] = { CBL:id };
-            merged[id][col] = typeof r[col]==="string" ? strip(r[col]) : r[col];
+            if (!merged[id]) merged[id] = { CBL: id };
+            merged[id][col] = typeof r[col] === "string" ? strip(r[col]) : r[col];
           });
-        }catch(e){console.warn("Chargement JSON",col,e);}
+        } catch (e) {
+          console.warn("Chargement JSON", col, e);
+        }
       }
       cables = Object.values(merged);
       const set = new Set();
-      cables.forEach(c=>{ if(c.APA)set.add(c.APA); if(c.APO)set.add(c.APO);});
-      devices = [...set];                         // sans préfixe
+      cables.forEach(c => {
+        if (c.APA) set.add(c.APA);
+        if (c.APO) set.add(c.APO);
+      });
+      devices = [...set]; // Liste des appareils sans préfixe
     })();
 
-    /* ---------- Recherche ---------- */
-    function search(){
+    /* Recherche */
+    function search() {
       const q = strip(document.getElementById("apInput").value.trim());
-      if(!q) return hideSug();
+      if (!q) return hideSug();
 
       hideSug();
-      const rows = cables.filter(c=>c.APA===q || c.APO===q);
-      render(rows,q);
+      const rows = cables.filter(c => c.APA === q || c.APO === q);
+      render(rows, q);
     }
-    function render(rows, dev){
+
+    function render(rows, dev) {
       const box = document.getElementById("result");
-      if(!rows.length){
+      if (!rows.length) {
         box.innerHTML = `<div class="alert alert-warning">Aucun câble lié à « ${dev} ».</div>`;
         return;
       }
       let html = `<h4>${rows.length} câble(s) pour « ${dev} » :</h4>
       <div class="table-responsive mt-3"><table class="table table-bordered">
       <thead class="table-light"><tr><th>Câble</th><th>Statut</th><th>GAM</th><th>Direction</th></tr></thead><tbody>`;
-      rows.forEach(c=>{
-        const dir = c.APA===dev ? "Arrivée (APA)" : c.APO===dev ? "Départ (APO)" : "-";
-        html += `<tr><td>${c.CBL}</td><td>${c.STT_CBL_BORD||"-"}</td><td>${c.GAM||"-"}</td><td>${dir}</td></tr>`;
+      rows.forEach(c => {
+        const dir = c.APA === dev ? "Arrivée (APA)" : c.APO === dev ? "Départ (APO)" : "-";
+        html += `<tr><td>${c.CBL}</td><td>${c.STT_CBL_BORD || "-"}</td><td>${c.GAM || "-"}</td><td>${dir}</td></tr>`;
       });
       html += `</tbody></table></div>`;
       box.innerHTML = html;
     }
 
-    /* ---------- Suggestions ---------- */
-    function showSug(){
+    /* Suggestions */
+    function showSug() {
       const val = strip(document.getElementById("apInput").value.trim());
       const box = document.getElementById("suggestions");
       box.innerHTML = "";
-      if(!val){hideSug();return;}
+      if (!val) {
+        hideSug();
+        return;
+      }
 
-      const list = devices.filter(d=>d.includes(val)).slice(0,15); // recherche partielle
-      if(!list.length){hideSug();return;}
+      const list = devices.filter(d => d.includes(val)).slice(0, 15); // recherche partielle
+      if (!list.length) {
+        hideSug();
+        return;
+      }
 
-      list.forEach(d=>{
+      list.forEach(d => {
         const el = document.createElement("div");
         el.className = "list-group-item list-group-item-action";
         el.textContent = d;
-        el.onclick = ()=>{ document.getElementById("apInput").value=d; hideSug(); search();};
+        el.onclick = () => {
+          document.getElementById("apInput").value = d;
+          hideSug();
+          search();
+        };
         box.appendChild(el);
       });
-      box.style.display="block";
+      box.style.display = "block";
     }
-    function hideSug(){ document.getElementById("suggestions").style.display="none";}
 
-    /* ---------- Events ---------- */
+    function hideSug() {
+      document.getElementById("suggestions").style.display = "none";
+    }
+
+    /* Événements */
     document.getElementById("searchBtn").onclick = search;
-    document.getElementById("apInput").oninput   = showSug;
-    document.getElementById("apInput").onkeydown = e=>{ if(e.key==="Enter"){e.preventDefault(); search();} };
+    document.getElementById("apInput").oninput = showSug;
+    document.getElementById("apInput").onkeydown = e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        search();
+      }
+    };
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
