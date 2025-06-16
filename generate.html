@@ -57,12 +57,12 @@
     <div id="downloadLinks" class="mt-4"></div>
   </div>
 
+  <!-- Chargez d'abord le fichier de configuration -->
+  <script src="config_changement_navire.js"></script>
+
   <script>
-    // Liste des colonnes d'intérêt (en plus de CBL)
-    const columnsOfInterest = [
-      "GAM", "APO", "STT_CBL_BORD", "RESP_TIRAGE", "LOT_MTG_APO",
-      "APA", "LOT_MTG_APA", "PT_CBL", "COD_PLAN", "LOCAL_APO", "LOCAL_APA"
-    ];
+    // Utilisez les colonnes définies dans config_changement_navire.js
+    const columnsOfInterest = window.COLUMNS;
 
     document.getElementById("fileInput").addEventListener("change", handleFile);
 
@@ -115,7 +115,7 @@
           );
           const url = URL.createObjectURL(blob);
 
-          const fileName = `cables_${col}.json`;
+          const fileName = `${window.JSON_FILES.CABLES_PREFIX}${col}${window.JSON_FILES.JSON_EXTENSION}`;
           const link = document.createElement("a");
           link.href = url;
           link.download = fileName;
