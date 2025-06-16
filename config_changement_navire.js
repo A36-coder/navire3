@@ -16,7 +16,11 @@ const SHIP = {
   NAME: 'A36'
 };
 
+// Colonnes à utiliser dans les différentes pages
+const COLUMNS = ["PT_CBL", "GAM", "STT_CBL_BORD", "RESP_TIRAGE", "LOT_MTG_APO", "LOCAL_APO", "APO", "LOT_MTG_APA", "LOCAL_APA", "APA"];
+
 // Exporter les constantes pour les utiliser dans d'autres fichiers
 window.PREFIXES = PREFIXES;
 window.LINKS = LINKS;
 window.SHIP = SHIP;
+window.COLUMNS = COLUMNS;
