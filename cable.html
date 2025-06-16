@@ -101,6 +101,10 @@
           return;
         }
 
+        // Déterminer si l'appareil est APO ou APA
+        const isAPO = cable.APO && codeInput.includes(cable.APO);
+        const isAPA = cable.APA && codeInput.includes(cable.APA);
+
         let html = `
           <div class="card mb-3">
             <div class="card-header bg-primary text-white">🔌 Câble : ${cable.CBL}</div>
@@ -111,26 +115,26 @@
                 <li><strong>Statut du câble à bord:</strong> ${cable.STT_CBL_BORD || "-"}</li>
                 <li><strong>Responsable du tirage:</strong> ${cable.RESP_TIRAGE || "-"}</li>
               </ul>
-              <h5 class="card-title mt-4">Détails APO et APA</h5>
+              <h5 class="card-title mt-4">Détails</h5>
               <table class="table table-bordered">
                 <thead>
                   <tr>
-                    <th>APO</th>
-                    <th>APA</th>
+                    <th>Information</th>
+                    <th>Valeur</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td>${cable.APO || "-"}</td>
-                    <td>${cable.APA || "-"}</td>
+                    <td><strong>Appareil</strong></td>
+                    <td>${isAPO ? cable.APO : isAPA ? cable.APA : "-"}</td>
                   </tr>
                   <tr>
-                    <td><strong>Lot Montage APO:</strong> ${cable.LOT_MTG_APO || "-"}</td>
-                    <td><strong>Lot Montage APA:</strong> ${cable.LOT_MTG_APA || "-"}</td>
+                    <td><strong>Lot Montage</strong></td>
+                    <td>${isAPO ? cable.LOT_MTG_APO : isAPA ? cable.LOT_MTG_APA : "-"}</td>
                   </tr>
                   <tr>
-                    <td><strong>Local APO:</strong> ${cable.LOCAL_APO || "-"}</td>
-                    <td><strong>Local APA:</strong> ${cable.LOCAL_APA || "-"}</td>
+                    <td><strong>Local</strong></td>
+                    <td>${isAPO ? cable.LOCAL_APO : isAPA ? cable.LOCAL_APA : "-"}</td>
                   </tr>
                 </tbody>
               </table>
