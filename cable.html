@@ -58,7 +58,10 @@
     let dataMap = {};
     let allCbls = [];
 
-    const stripPrefix = id => String(id || "").replace(/^A36-C-/i, "");
+// Utilisez le préfixe pour les câbles défini dans config_changement_navire.js
+    
+const stripPrefix = id => String(id || "").replace(new RegExp(`^${window.PREFIXES.CABLE_PREFIX}`, 'i'), "");
+
 
     document.getElementById("searchBtn").addEventListener("click", searchCBL);
     document.getElementById("cblInput").addEventListener("input", showSuggestions);
