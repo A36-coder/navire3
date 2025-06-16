@@ -58,8 +58,7 @@
   <script>
     // Attendez que le DOM soit entièrement chargé
     document.addEventListener('DOMContentLoaded', function() {
-      const colonnes = ["GAM", "STT_CBL_BORD", "RESP_TIRAGE", "LOT_MTG_APO", "APA",
-                        "LOT_MTG_APA", "PT_CBL", "COD_PLAN", "LOCAL_APO", "LOCAL_APA"];
+      const colonnes = ["GAM", "STT_CBL_BORD", "RESP_TIRAGE", "LOT_MTG_APO", "LOCAL_APO", "APO", "LOT_MTG_APA", "LOCAL_APA", "APA", "PT_CBL", "COD_PLAN"];
       let dataMap = {};
       let allCbls = [];
 
@@ -102,14 +101,46 @@
           return;
         }
 
-        let html = `<div class="card mb-3">
-          <div class="card-header bg-primary text-white">🔌 Câble : ${cable.CBL}</div>
-          <div class="card-body">
-            <ul class="list-unstyled">`;
-        for (const key of colonnes) {
-          html += `<li><strong>${key}:</strong> ${cable[key] || "-"}</li>`;
-        }
-        html += `</ul></div></div>`;
+        let html = `
+          <div class="card mb-3">
+            <div class="card-header bg-primary text-white">🔌 Câble : ${cable.CBL}</div>
+            <div class="card-body">
+              <h5 class="card-title">Informations générales</h5>
+              <ul class="list-unstyled">
+                <li><strong>GAM:</strong> ${cable.GAM || "-"}</li>
+                <li><strong>Statut du câble à bord:</strong> ${cable.STT_CBL_BORD || "-"}</li>
+                <li><strong>Responsable du tirage:</strong> ${cable.RESP_TIRAGE || "-"}</li>
+              </ul>
+              <h5 class="card-title mt-4">Détails APO et APA</h5>
+              <table class="table table-bordered">
+                <thead>
+                  <tr>
+                    <th>APO</th>
+                    <th>APA</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>${cable.APO || "-"}</td>
+                    <td>${cable.APA || "-"}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Lot Montage APO:</strong> ${cable.LOT_MTG_APO || "-"}</td>
+                    <td><strong>Lot Montage APA:</strong> ${cable.LOT_MTG_APA || "-"}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Local APO:</strong> ${cable.LOCAL_APO || "-"}</td>
+                    <td><strong>Local APA:</strong> ${cable.LOCAL_APA || "-"}</td>
+                  </tr>
+                </tbody>
+              </table>
+              <ul class="list-unstyled">
+                <li><strong>Point de câble:</strong> ${cable.PT_CBL || "-"}</li>
+                <li><strong>Code Plan:</strong> ${cable.COD_PLAN || "-"}</li>
+              </ul>
+            </div>
+          </div>
+        `;
         resultDiv.innerHTML = html;
       }
 
