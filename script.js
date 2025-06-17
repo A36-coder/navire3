@@ -396,3 +396,17 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById("cblInput").addEventListener("keydown", handleKeyDown);
   }
 });
+
+// je cherche à adapter et reparer le bug de nom relatif qui n'aparait pas dans la page index
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM entièrement chargé');
+  if (window.SHIP && window.SHIP.NAME) {
+    console.log('Nom du navire :', window.SHIP.NAME);
+    const shipNameElements = document.querySelectorAll('#shipName');
+    shipNameElements.forEach(element => {
+      element.textContent = window.SHIP.NAME;
+    });
+  } else {
+    console.error('La configuration du navire n\'est pas définie.');
+  }
+});
