@@ -1,4 +1,4 @@
-// generateZip.js
+// script.js
 
 let jsonData = {};
 function handleFile(e) {
@@ -19,6 +19,8 @@ function handleFile(e) {
   };
   reader.readAsArrayBuffer(file);
 }
+
+
 function parseAndSplitColumns(arrayBuf) {
   try {
     const workbook = XLSX.read(arrayBuf, { type: "array" });
@@ -50,10 +52,11 @@ function parseAndSplitColumns(arrayBuf) {
     showMsg(`Erreur: ${err.message}`, "danger");
   }
 }
+
+
 function downloadAllAsZip() {
   const zip = new JSZip();
   const imgFolder = zip.folder("json_files");
-
   window.COLUMNS.forEach(col => {
     if (jsonData[col]) {
       imgFolder.file(`cables_${col}.json`, JSON.stringify(jsonData[col], null, 2));
@@ -69,7 +72,10 @@ function downloadAllAsZip() {
   });
 }
 
-
 function showMsg(msg, type = "info") {
   document.getElementById("message").innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
 }
+
+
+window.handleFile = handleFile;
+window.downloadAllAsZip = downloadAllAsZip;
