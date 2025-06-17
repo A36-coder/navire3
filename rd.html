@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>Recherche & Développement</title>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><!--gestion excel-->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"> <!--style visuel-->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     #fileInput { max-width: 300px; }
     .appareil-table { margin-bottom: 2rem; }
@@ -31,7 +31,7 @@
   </nav>
 
   <div class="container">
-    <h1 class="mb-4">Recherche & Développement</h1>
+    <h1>🔎 Recherche & Développement</h1>
     <p>Entrez plusieurs appareils avec ou sans préfixe <code>A36-</code> ou <code>A36-C-</code>.<br>
     Vous pouvez les séparer par : espace, retour à la ligne, virgule ou point-virgule. Ou encore mieux: copier-coller une colonne excel</p>
 
@@ -56,19 +56,18 @@
     <div id="resultsArea"></div>
   </div>
 
+  <script src="config_changement_navire.js"></script>
   <script>
-    // Helper function to strip prefixes
-    const strip = s => String(s || "").replace(/^A36-(?:C-)?/i, "").toUpperCase();
+    const strip = s => String(s || "").replace(new RegExp(`^${window.PREFIXES.APPAREIL_PREFIX}`, 'i'), "").toUpperCase();
 
     let cables = [];
     let globalResults = [];
     let currentBase = "inconnue";
 
-    const COLS = ["APA", "APO", "PT_CBL", "RESP_TIRAGE", "GAM", "STT_CBL_BORD", "LOCAL_APA", "LOT_MTG_APA", "LOCAL_APO", "LOT_MTG_APO"];
+    const COLS = window.COLUMNS;
     const q = s => document.querySelector(s);
     const updateBase = () => q("#baseIndicator").textContent = `Base : ${currentBase}`;
 
-    // Initialize event listeners
     window.addEventListener("load", () => {
       q("#fileInput").addEventListener("change", handleXLSB);
       q("#btnSearch").addEventListener("click", searchMulti);
@@ -78,14 +77,13 @@
       loadDefaultJSON();
     });
 
-    // Load default JSON data
     async function loadDefaultJSON() {
       currentBase = "JSON par défaut";
       updateBase();
       const merged = {};
       for (const col of COLS) {
         try {
-          const r = await fetch(`json/cables_${col}.json`);
+          const r = await fetch(`json/${window.JSON_FILES.CABLES_PREFIX}${col}${window.JSON_FILES.JSON_EXTENSION}`);
           if (!r.ok) continue;
           const rows = await r.json();
           rows.forEach(item => {
@@ -100,7 +98,6 @@
       cables = Object.values(merged);
     }
 
-    // Handle XLSB file input
     function handleXLSB(e) {
       const f = e.target.files[0];
       if (!f) return;
@@ -110,7 +107,6 @@
       fr.readAsArrayBuffer(f);
     }
 
-    // Parse XLSB file
     function parseXLSB(buf) {
       try {
         const wb = XLSX.read(buf, { type: "array" });
@@ -134,12 +130,10 @@
       }
     }
 
-    // Split input text into an array of apparatus
     function splitInput(txt) {
       return txt.split(/[\s,;]+/).filter(Boolean);
     }
 
-    // Search for multiple apparatus
     function searchMulti() {
       const appareils = splitInput(q("#appareilsInput").value).map(strip);
       if (!appareils.length) return;
@@ -170,7 +164,6 @@
       });
     }
 
-    // Build HTML table for results
     function buildTable(app, list) {
       if (!list.length) return `<h4>${app}</h4><div class="alert alert-warning">Aucun câble trouvé.</div>`;
       const any = list[0];
@@ -180,7 +173,6 @@
       return `<div class="appareil-table"><h4>${app} – ${list.length} câble(s)<br><small class="text-muted">Lot : ${lot || "-"}/ Local : ${loc || "-"}</small></h4><div class="table-responsive"><table class="table table-bordered"><thead class="table-light"><tr><th>Appareil</th><th>Câble</th><th>PT_CBL</th><th>Resp. Tirage</th><th>GAM</th><th>Statut</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
     }
 
-    // Export results to Excel
     function exportExcel(nonTires) {
       let data = nonTires ? globalResults.filter(r => r.Statut.toUpperCase() !== "T") : globalResults;
       if (!data.length) return alert("Aucune donnée !");
@@ -190,7 +182,6 @@
       XLSX.writeFile(wb, nonTires ? "non_tires.xlsx" : "all.xlsx");
     }
 
-    // Export OK apparatus
     function exportOk() {
       const map = {};
       globalResults.forEach(r => {
