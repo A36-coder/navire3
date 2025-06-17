@@ -109,26 +109,30 @@
                 <li><strong>Statut du câble à bord:</strong> ${cable.STT_CBL_BORD || "-"}</li>
                 <li><strong>Responsable du tirage:</strong> ${cable.RESP_TIRAGE || "-"}</li>
               </ul>
-              <h5 class="card-title mt-4">Détails</h5>
+              <h5 class="card-title mt-4">Détails APO et APA</h5>
               <table class="table table-bordered">
                 <thead>
                   <tr>
                     <th>Information</th>
-                    <th>Valeur</th>
+                    <th>APO</th>
+                    <th>APA</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
                     <td><strong>Appareil</strong></td>
                     <td>${cable.APO || "-"}</td>
+                    <td>${cable.APA || "-"}</td>
                   </tr>
                   <tr>
                     <td><strong>Lot Montage</strong></td>
                     <td>${cable.LOT_MTG_APO || "-"}</td>
+                    <td>${cable.LOT_MTG_APA || "-"}</td>
                   </tr>
                   <tr>
                     <td><strong>Local</strong></td>
                     <td>${cable.LOCAL_APO || "-"}</td>
+                    <td>${cable.LOCAL_APA || "-"}</td>
                   </tr>
                 </tbody>
               </table>
