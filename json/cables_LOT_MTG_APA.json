@@ -5480,6 +5480,10 @@
     "LOT_MTG_APA": "233"
   },
   {
+    "CBL": "A36-C-07E521M",
+    "LOT_MTG_APA": "233"
+  },
+  {
     "CBL": "A36-C-07EL2051",
     "LOT_MTG_APA": "452"
   },
@@ -15741,7 +15745,7 @@
   },
   {
     "CBL": "A36-C-1CD45AAH",
-    "LOT_MTG_APA": "454"
+    "LOT_MTG_APA": ""
   },
   {
     "CBL": "A36-C-1CD54A",
@@ -35140,6 +35144,10 @@
     "LOT_MTG_APA": "434"
   },
   {
+    "CBL": "A36-C-A2T46A",
+    "LOT_MTG_APA": "434"
+  },
+  {
     "CBL": "A36-C-A2T46AAA",
     "LOT_MTG_APA": "434"
   },
@@ -38936,6 +38944,10 @@
     "LOT_MTG_APA": "233"
   },
   {
+    "CBL": "A36-C-A9T32A",
+    "LOT_MTG_APA": "233"
+  },
+  {
     "CBL": "A36-C-A9T32AAA",
     "LOT_MTG_APA": ""
   },
@@ -39838,6 +39850,10 @@
   {
     "CBL": "A36-C-B1T26AAH",
     "LOT_MTG_APA": "432"
+  },
+  {
+    "CBL": "A36-C-B1T32A",
+    "LOT_MTG_APA": "233"
   },
   {
     "CBL": "A36-C-B1T32A",
@@ -42653,6 +42669,14 @@
   },
   {
     "CBL": "A36-C-BMVAMG1",
+    "LOT_MTG_APA": "473"
+  },
+  {
+    "CBL": "A36-C-BMVAMG1",
+    "LOT_MTG_APA": "473"
+  },
+  {
+    "CBL": "A36-C-BMVAMG2",
     "LOT_MTG_APA": "473"
   },
   {
@@ -46784,6 +46808,14 @@
     "LOT_MTG_APA": "435"
   },
   {
+    "CBL": "A36-C-CE3840",
+    "LOT_MTG_APA": "435"
+  },
+  {
+    "CBL": "A36-C-CE3841",
+    "LOT_MTG_APA": "435"
+  },
+  {
     "CBL": "A36-C-CE3841",
     "LOT_MTG_APA": "435"
   },
@@ -47668,6 +47700,10 @@
     "LOT_MTG_APA": "223"
   },
   {
+    "CBL": "A36-C-CGM3340T",
+    "LOT_MTG_APA": "223"
+  },
+  {
     "CBL": "A36-C-CGM4200P",
     "LOT_MTG_APA": "323"
   },
@@ -48517,6 +48553,10 @@
   },
   {
     "CBL": "A36-C-CI2308",
+    "LOT_MTG_APA": "233"
+  },
+  {
+    "CBL": "A36-C-CI2309",
     "LOT_MTG_APA": "233"
   },
   {
@@ -59892,6 +59932,10 @@
     "LOT_MTG_APA": "223"
   },
   {
+    "CBL": "A36-C-DIJB301C",
+    "LOT_MTG_APA": "223"
+  },
+  {
     "CBL": "A36-C-DIJB302A",
     "LOT_MTG_APA": "253"
   },
@@ -59916,6 +59960,22 @@
     "LOT_MTG_APA": "223"
   },
   {
+    "CBL": "A36-C-DIJB302G",
+    "LOT_MTG_APA": "253"
+  },
+  {
+    "CBL": "A36-C-DIJB302H",
+    "LOT_MTG_APA": "323"
+  },
+  {
+    "CBL": "A36-C-DIJB302I",
+    "LOT_MTG_APA": "433"
+  },
+  {
+    "CBL": "A36-C-DIJB302J",
+    "LOT_MTG_APA": "433"
+  },
+  {
     "CBL": "A36-C-DIJB303A",
     "LOT_MTG_APA": ""
   },
@@ -59938,6 +59998,10 @@
   {
     "CBL": "A36-C-DIJB307B",
     "LOT_MTG_APA": "223"
+  },
+  {
+    "CBL": "A36-C-DIJB307C",
+    "LOT_MTG_APA": "484"
   },
   {
     "CBL": "A36-C-DIPR1061",
@@ -76228,6 +76292,10 @@
     "LOT_MTG_APA": "683"
   },
   {
+    "CBL": "A36-C-H3B0322C",
+    "LOT_MTG_APA": "683"
+  },
+  {
     "CBL": "A36-C-H3B0322D",
     "LOT_MTG_APA": ""
   },
@@ -86356,6 +86424,10 @@
     "LOT_MTG_APA": "473"
   },
   {
+    "CBL": "A36-C-IT481041",
+    "LOT_MTG_APA": "473"
+  },
+  {
     "CBL": "A36-C-IT481042",
     "LOT_MTG_APA": "473"
   },
@@ -94953,11 +95025,15 @@
   },
   {
     "CBL": "A36-C-N7T48A",
-    "LOT_MTG_APA": ""
+    "LOT_MTG_APA": "464"
   },
   {
     "CBL": "A36-C-N7T48AA",
     "LOT_MTG_APA": ""
+  },
+  {
+    "CBL": "A36-C-N7T48AAA",
+    "LOT_MTG_APA": "464"
   },
   {
     "CBL": "A36-C-N7T57A",
@@ -96126,6 +96202,10 @@
   {
     "CBL": "A36-C-NFN201",
     "LOT_MTG_APA": "461"
+  },
+  {
+    "CBL": "A36-C-NFN2011",
+    "LOT_MTG_APA": "494"
   },
   {
     "CBL": "A36-C-NFN2011",
@@ -98125,7 +98205,7 @@
   },
   {
     "CBL": "A36-C-P2B12BAJ",
-    "LOT_MTG_APA": "441"
+    "LOT_MTG_APA": ""
   },
   {
     "CBL": "A36-C-P2B12BAK",
@@ -100240,6 +100320,10 @@
     "LOT_MTG_APA": "233"
   },
   {
+    "CBL": "A36-C-PRC4979P",
+    "LOT_MTG_APA": "233"
+  },
+  {
     "CBL": "A36-C-PRC5030L",
     "LOT_MTG_APA": "633"
   },
@@ -101729,7 +101813,7 @@
   },
   {
     "CBL": "A36-C-Q3AB33F",
-    "LOT_MTG_APA": "433"
+    "LOT_MTG_APA": ""
   },
   {
     "CBL": "A36-C-Q3AB36A",
@@ -105644,7 +105728,15 @@
     "LOT_MTG_APA": "233"
   },
   {
+    "CBL": "A36-C-RJ452105",
+    "LOT_MTG_APA": "233"
+  },
+  {
     "CBL": "A36-C-RJ452106",
+    "LOT_MTG_APA": "233"
+  },
+  {
+    "CBL": "A36-C-RJ452107",
     "LOT_MTG_APA": "233"
   },
   {
