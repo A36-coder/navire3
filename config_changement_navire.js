@@ -19,7 +19,7 @@ const SHIP = {
 // Colonnes à utiliser dans les différentes pages
 const COLUMNS = ["PT_CBL", "GAM", "STT_CBL_BORD", "RESP_TIRAGE", "LOT_MTG_APO", "LOCAL_APO", "APO", "LOT_MTG_APA", "LOCAL_APA", "APA"];
 
-// Noms des fichiers JSON
+// Noms des fichiers JSON, ne modifier que si vous maitrisez...
 const JSON_FILES = {
   CABLES_PREFIX: 'cables_',
   JSON_EXTENSION: '.json'
