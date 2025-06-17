@@ -83,7 +83,7 @@
       const merged = {};
       for (const col of COLS) {
         try {
-          const r = await fetch(`json/${window.JSON_FILES.CABLES_PREFIX}${col}${window.JSON_FILES.JSON_EXTENSION}`);
+          const r = await fetch(`json/cables_${col}.json`);
           if (!r.ok) continue;
           const rows = await r.json();
           rows.forEach(item => {
