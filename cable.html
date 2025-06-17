@@ -52,11 +52,9 @@
     <div id="result" class="mt-4"></div>
   </div>
 
-  <!-- Chargez d'abord le fichier de configuration -->
   <script src="config_changement_navire.js"></script>
 
   <script>
-    // Attendez que le DOM soit entièrement chargé
     document.addEventListener('DOMContentLoaded', function() {
       const colonnes = window.COLUMNS;
       let dataMap = {};
@@ -72,7 +70,7 @@
         let temp = {};
         for (const col of colonnes) {
           try {
-            const res = await fetch(`${window.JSON_FILES.CABLES_PREFIX}${col}${window.JSON_FILES.JSON_EXTENSION}`);
+            const res = await fetch(`json/${window.JSON_FILES.CABLES_PREFIX}${col}${window.JSON_FILES.JSON_EXTENSION}`);
             const rows = await res.json();
             rows.forEach(row => {
               const rawId = row.CBL;
