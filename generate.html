@@ -3,23 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <title>🛠 Générer et mettre à jour JSON</title>
+
+  <!-- SheetJS : pour lire le fichier Excel (xlsb ou xlsx) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- JSZip : pour créer un .zip contenant tous les JSON -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+
+  <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
   <style>
+    /* Style pour le message de chargement */
     #loadingMsg {
       font-style: italic;
       color: #666;
     }
   </style>
 </head>
+
 <body class="p-4 bg-light">
+
+  <!-- Navbar de navigation principale -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
     <div class="container-fluid">
       <a class="navbar-brand" href="index.html">📊 Câbles Viewer</a>
+
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
+
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav">
           <li class="nav-item"><a class="nav-link active" href="index.html">🏠 Accueil</a></li>
@@ -34,33 +47,48 @@
 
   <div class="container">
     <h1>🛠 Générer des fichiers JSON depuis un fichier NEC (.xlsb)</h1>
+
     <p>
-      Cette page vous permet de créer un JSON par colonne d’intérêt à partir de la feuille <code>Cables</code> de votre fichier <code>.xlsb</code>.<br>
-      <strong>Plus tard</strong>, elle servira à mettre à jour le site en se connectant à
-      <a href="https://github.com/A36-coder/elecA36/tree/main/json" target="_blank">A36-coder/elecA36/json</a>.
+      Cette page vous permet de créer un JSON **par colonne utile** à partir de la feuille <code>Cables</code> d’un fichier <code>.xlsb</code>.<br>
+      <strong>Plus tard</strong> : la page pourra envoyer les fichiers directement sur GitHub → 
+      <a href="https://github.com/A36-coder/navire3/tree/main/json" target="_blank">A36-coder/navire3/json</a>.
     </p>
 
-    <!-- Bouton pour télécharger le fichier NEC -->
+    <!-- Lien pour télécharger un modèle de fichier NEC -->
     <a id="downloadNecLink" class="btn btn-outline-secondary mb-3" target="_blank" download>
       📥 Télécharger le fichier NEC (.xlsb)
     </a>
 
-    <!-- Input file pour charger localement -->
+    <!-- Input pour sélectionner un fichier NEC localement -->
     <input type="file" id="fileInput" accept=".xlsb, .xlsx" class="form-control mb-3">
 
+    <!-- Zone pour les messages / erreurs / chargement -->
     <div id="message"></div>
     <div id="loadingMsg"></div>
+
+    <!-- Zone où les liens de téléchargement JSON apparaîtront -->
     <div id="downloadLinks" class="mt-4"></div>
-    <button id="downloadAllBtn" class="btn btn-success mt-3" disabled>Télécharger tout en ZIP</button>
+
+    <!-- Bouton pour tout télécharger d’un coup (ZIP) -->
+    <button id="downloadAllBtn" class="btn btn-success mt-3" disabled>
+      Télécharger tout en ZIP
+    </button>
   </div>
 
+  <!-- Contient le nom du navire, colonnes à exporter, lien vers le fichier NEC, etc. -->
   <script src="config_changement_navire.js"></script>
+
+  <!-- Fichier commun, utilisé ici pour insérer le nom du navire ou d’autres fonctions -->
   <script src="script.js"></script>
+
+  <!-- Au chargement, on met à jour le lien de téléchargement du fichier NEC -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       document.getElementById("downloadNecLink").href = window.LINKS.NEC_DOWNLOAD;
     });
   </script>
+
+  <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
