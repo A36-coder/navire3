@@ -3,18 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <title>Bienvenue sur le site de gestion des câbles et appareils</title>
+
+  <!-- Bootstrap pour le style (version 5.3) -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
+
 <body class="p-4 bg-light">
-  <!-- Navbar -->
+
+  <!-- Barre de navigation principale -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
     <div class="container-fluid">
+      <!-- Logo + titre de la nav -->
       <a class="navbar-brand" href="index.html">📊 Gestion des Câbles et Appareils</a>
+
+      <!-- Bouton de menu (mobile) -->
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
+
+      <!-- Liens de navigation -->
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav">
+          <!-- Onglets = pages fonctionnelles du site -->
           <li class="nav-item"><a class="nav-link active" href="index.html">🏠 Accueil</a></li>
           <li class="nav-item"><a class="nav-link" href="cable.html">🔍 Rechercher Câble</a></li>
           <li class="nav-item"><a class="nav-link" href="appareil.html">📡 Rechercher Appareil</a></li>
@@ -25,34 +35,73 @@
     </div>
   </nav>
 
+  <!-- Contenu principal -->
   <div class="container">
     <h1 class="mb-4">Bienvenue sur le site de gestion des câbles et appareils</h1>
 
-    <p>Ce site est un prototype conçu pour aider à la gestion des câbles et des appareils sur le navire <span id="shipName"></span>, en se basant sur le NEC (Nomenclature des Equipements de Câblage). Bien que les données soient mises à jour manuellement dans cette version, une version future permettra une mise à jour automatique des données.</p>
+    <!-- Introduction -->
+    <p>
+      Ce site est un prototype conçu pour aider à la gestion des câbles et des appareils sur le navire
+      <span id="shipName"></span>, en se basant sur le NEC (Nomenclature des Equipements de Câblage).
+      Pour l’instant, les données sont à jour manuellement — une version auto-maj pourrait suivre.
+    </p>
 
+    <!-- Explication des fonctionnalités -->
     <h2>Objectifs du site</h2>
     <p>Le site permet d'accéder à différentes fonctionnalités :</p>
     <ul>
-      <li><strong>Onglet Câble</strong> : Recherche et consultation des informations relatives à un câble spécifique.</li>
-      <li><strong>Onglet Appareil</strong> : Recherche d'un appareil en particulier et consultation de ses informations associées.</li>
-      <li><strong>Onglet R&D</strong> : Permet d'étudier plusieurs appareils à la fois, par exemple en copiant et collant une colonne Excel contenant des appareils, et de voir leur statut de câblage. Cette section permet également d'exporter les câbles non tirés pour demander leur statut ou d'exporter les appareils dont tous les câbles sont déclarés tirés pour une demande de branchement.</li>
-      <li><strong>Onglet Générer JSON</strong> : Permet de convertir le NEC (qui est un Excel) en fichier JSON (format exploitable par notre site).</li>
+      <li><strong>Onglet Câble</strong> : chercher un câble précis + voir ses infos.</li>
+      <li><strong>Onglet Appareil</strong> : chercher un appareil + voir ses câbles liés.</li>
+      <li>
+        <strong>Onglet R&D</strong> : tester plein d'appareils à la fois (colle une colonne Excel),
+        voir leur statut, exporter ce qui reste à tirer ou ce qui est OK pour branchement.
+      </li>
+      <li><strong>Onglet Générer JSON</strong> : convertir un NEC Excel en JSON utilisable par le site.</li>
     </ul>
 
-    <p>Les données utilisées sont basées sur le NEC et sont relatives au navire <span id="shipName"></span>, mais le site peut facilement être adapté à d'autres navires qui suivent la même structure de NEC en modifiant le fichier config_changement_navire.js, un MODOP vous sera fourni avant mon départ.</p>
-    <p>Pour plus de détails sur la mise à jour des fichiers ou l'adaptation du site à un autre navire, consultez le guide suivant :</p>
+    <!-- Note sur l’adaptabilité -->
+    <p>
+      Les données sont celles du navire <span id="shipName"></span>,
+      mais tu peux adapter le site à un autre navire (même format de NEC) en changeant `config_changement_navire.js`.
+      Un MODOP est prévu pour expliquer ça proprement.
+    </p>
+
+    <!-- Docs utiles -->
     <h2>Documents utiles</h2>
-    <p>Pour plus de détails sur la mise à jour des fichiers ou l'adaptation du site à un autre navire, consultez le guide suivant :</p>
+    <p>Pour mettre à jour le statut des câbles, voir ce guide :</p>
     <ul>
-      <li><a href="https://raw.githubusercontent.com/A36-coder/elecA36/main/Modop%20MAJ%20app%20c%C3%A2blage.pdf" target="_blank">Manuel de mise à jour du fichier (statut des câbles et mise à jour générale)</a></li>
+      <li>
+        <a href="https://raw.githubusercontent.com/A36-coder/navire3/main/Modop%20MAJ%20app%20c%C3%A2blage.pdf" target="_blank">
+          Manuel de mise à jour du fichier (statut des câbles), (Actuellement non chargé car contient les ID de connection, contacter P. ARCADE)
+        </a>
+      </li>
     </ul>
 
+    <p>Pour adapter le site à un autre navire, voir celui-là :</p>
+    <ul>
+      <li>
+        <a href="https://raw.githubusercontent.com/A36-coder/navire3/main/MODOP%20CHANGEMENT%20NAVIRE.pdf" target="_blank">
+          Manuel de mise à jour du site à un autre navire, (Actuellement non chargé car contient les ID de connection, contacter P. ARCADE)
+        </a>
+      </li>
+    </ul>
+
+    <!-- Pied de page -->
     <footer class="mt-5">
-      <p>Site conçu pour le navire <span id="shipName"></span>, adaptable à d'autres navires utilisant une structure de NEC similaire.</p>
+      <p>
+        Site conçu pour le navire <span id="shipName"></span>,
+        mais adaptable à d'autres navires avec un NEC similaire.
+      </p>
     </footer>
   </div>
+
+  <!-- Script de config navire : contient le nom du navire, colonnes à utiliser, etc. -->
   <script src="config_changement_navire.js"></script>
+
+  <!-- Script perso : probablement pour injecter le nom du navire dans les span#shipName -->
   <script src="script.js"></script>
+
+  <!-- Bootstrap JS (comportements dynamiques) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
